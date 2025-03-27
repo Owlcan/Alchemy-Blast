@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crafting Tools</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <div class="crafting-app">
+        <header>
+            <h1>Crafting Tools</h1>
+            <div class="nav-buttons">
+                <button id="compendium-btn" class="nav-btn">Compendium</button>
+                <button id="recipe-book-btn" class="nav-btn">Recipe Book</button>
+            </div>
+        </header>
+        
+        <main>
+            <div class="crafting-station">
+                <!-- Ingredient slots -->
+                <div class="slots-container">
+                    <div id="slot-a" class="ingredient-slot" data-position="a"></div>
+                    <div id="channel-a-b" class="channel horizontal"></div>
+                    <div id="slot-b" class="ingredient-slot" data-position="b"></div>
+                    <div id="channel-b-c" class="channel horizontal"></div>
+                    <div id="slot-c" class="ingredient-slot" data-position="c"></div>
+                    <div id="channel-c-d" class="channel horizontal"></div>
+                    <div id="slot-d" class="ingredient-slot" data-position="d"></div>
+                    <div id="slot-e" class="ingredient-slot exotic-slot" data-position="e"></div>
+                    <div id="result-chamber"></div>
+                </div>
+                
+                <button id="brew-btn" disabled>Craft</button>
+            </div>
+            
+            <div class="ingredients-drawer">
+                <div class="category-filters">
+                    <button class="category-btn active" data-category="all">All</button>
+                    <button class="category-btn" data-category="herb">Herbs</button>
+                    <button class="category-btn" data-category="crystal">Crystals</button>
+                    <button class="category-btn" data-category="metal">Metals</button>
+                    <button class="category-btn" data-category="essence">Essences</button>
+                    <button class="category-btn" data-category="legendary">Legendary</button>
+                </div>
+                
+                <div id="ingredients-container" class="ingredients-container"></div>
+            </div>
+            
+            <div class="crafted-items-drawer">
+                <h3>Crafted Items</h3>
+                <div id="crafted-items-container"></div>
+            </div>
+        </main>
+        
+        <!-- Modals -->
+        <div id="compendium-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Compendium</h2>
+                <div class="category-filters">
+                    <button class="comp-category-btn active" data-category="all">All</button>
+                    <button class="comp-category-btn" data-category="herb">Herbs</button>
+                    <button class="comp-category-btn" data-category="crystal">Crystals</button>
+                    <button class="comp-category-btn" data-category="metal">Metals</button>
+                    <button class="comp-category-btn" data-category="essence">Essences</button>
+                    <button class="comp-category-btn" data-category="food">Food</button>
+                    <button class="comp-category-btn" data-category="legendary">Legendary</button>
+                </div>
+                <div class="compendium-items"></div>
+            </div>
+        </div>
+        
+        <div id="result-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div class="result-details">
+                    <div class="result-image-container">
+                        <img id="result-image" src="" alt="Crafted item">
+                    </div>
+                    <div class="result-text">
+                        <h3 id="result-name"></h3>
+                        <p id="result-description"></p>
+                        <p><strong>Effects:</strong> <span id="result-effects"></span></p>
+                        <p id="crafted-count" style="display: none;"></p>
+                    </div>
+                </div>
+                <button id="collect-btn">Collect</button>
+            </div>
+        </div>
+        
+        <div id="recipe-book-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Recipe Book</h2>
+                <div class="recipe-book-items"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio elements -->
+    <audio id="legendary-success-sound" src="assets/sounds/legendarysuccess.wav" preload="auto"></audio>
+    <audio id="liquid-flow-sound" src="assets/sounds/liquid_flow.mp3" preload="auto"></audio>
+    <audio id="slot-remove-sound" src="assets/sounds/remove(reversed).mp3" preload="auto"></audio>
+    <audio id="success-sound" src="assets/sounds/success.wav" preload="auto"></audio>
+    <audio id="fail-sound" src="assets/sounds/fail.mp3" preload="auto"></audio>
+    <audio id="slot-sound" src="assets/sounds/set.mp3" preload="auto"></audio>
+
+    <!-- Add a fallback script to handle missing audio files -->
+    <script>
+        function createSilentAudio(id) {
+            const audio = document.createElement('audio');
+            audio.id = id;
+            audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            document.body.appendChild(audio);
+            return audio;
+        }
+        
+        // List of required audio elements
+        const requiredAudio = [
+            'liquid-flow-sound',
+            'success-sound',
+            'legendary-success-sound',
+            'fail-sound',
+            'slot-sound',
+            'slot-remove-sound'
+        ];
+        
+        // Create any missing audio elements
+        window.addEventListener('DOMContentLoaded', function() {
+            requiredAudio.forEach(id => {
+                if (!document.getElementById(id)) {
+                    console.warn(`Creating silent placeholder for missing audio: ${id}`);
+                    createSilentAudio(id);
+                }
+            });
+        });
+    </script>
+
+    <!-- Fix channel animations, especially C-D -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Override any JavaScript that might animate channel-c-d to only 50%
+            const originalSetTimeout = window.setTimeout;
+            window.setTimeout = function(callback, delay) {
+                // Intercept setTimeout calls
+                if (typeof callback === 'function') {
+                    const wrappedCallback = function() {
+                        // Execute the original callback
+                        callback();
+                        
+                        // Then check if any channel-filled elements need fixing
+                        const channelCDFill = document.querySelector('#channel-c-d .channel-filled');
+                        if (channelCDFill && channelCDFill.style.width === '50%') {
+                            console.log('Fixing channel C-D animation that was set to 50%');
+                            channelCDFill.style.width = '100%';
+                        }
+                    };
+                    return originalSetTimeout(wrappedCallback, delay);
+                }
+                return originalSetTimeout(callback, delay);
+            };
+        });
+    </script>
+
+    <!-- Remove any recipe-preview elements -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Clean up any existing preview elements
+            document.querySelectorAll('.recipe-preview').forEach(el => el.remove());
+        });
+    </script>
+
+    <!-- Core Styling -->
+    <style>
+        /* Base channel styles */
+        .channel {
+            height: 20px;
+            width: 70px;
+            background: #2d2d2d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .channel div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(to bottom, #A3E2EF 35%, #4F9CC0);
+            height: 100%;
+            width: 0%;
+            animation: grow 2s forwards;
+            box-shadow: 0 0 8px 1px white inset;
+        }
+
+        .channel div:before {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: url("H:/repos/Crafting Tools/assets/images/bubbles-mask.gif");
+            mix-blend-mode: overlay;
+            opacity: 0.5;
+        }
+
+        @keyframes grow {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        /* Grid Layout */
+        .slots-container {
+            display: grid;
+            grid-template-columns: auto 70px auto 70px auto 70px auto;
+            grid-template-rows: auto auto auto;
+            grid-template-areas: 
+                "slotA channelAB slotB channelBC slotC channelCD slotD"
+                ". . . slotE . . ."
+                ". . . result . . .";
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Slots and Result Chamber */
+        .ingredient-slot {
+            width: 80px;
+            height: 80px;
+            background-color: #3e2723;
+            border: 2px solid #d4af37;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #result-chamber {
+            width: 100px;
+            height: 100px;
+            background-color: #3e2723;
+            border: 2px solid #d4af37;
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Modal Styling */
+        .modal-content {
+            background-color: #5d4037;
+            background-image: linear-gradient(to bottom, #4e342e, #5d4037, #6d4c41);
+            border: 8px solid #3e2723;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            color: #e0e0e0;
+        }
+
+        #recipe-book-modal .modal-content {
+            max-width: 1012px;
+            width: 95%;
+        }
+
+        /* Recipe Elements */
+        .recipe-ingredient {
+            border: 2px solid #8d6e63;
+            background-color: #3e2723;
+            min-width: 45px;
+            min-height: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .collapse-btn {
+            display: none;
+        }
+
+        /* Crafting Station */
+        .crafting-station {
+            margin-top: 150px;
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            min-height: 500px;
+        }
+    </style>
+    
+    <!-- Load data first -->
+    <script src="ingredients.js"></script>
+    <script src="recipes.js"></script>
+    
+    <!-- Then load the main application -->
+    <script src="app.js"></script>
+    
+    <!-- Load debug utilities last -->
+    <script src="debug.js"></script>
+    <!-- Remove duplicates -->
+    <!-- <script src="assets/js/debug.js"></script> -->
+    <!-- <script src="document.js"></script> -->
+</body>
+</html>
