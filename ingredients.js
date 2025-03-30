@@ -4,15 +4,15 @@ const ingredients = [
         id: 'cream',
         name: 'Cream',
         description: 'Fresh dairy cream, essential for making ice cream and other desserts.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Cream.png',
         color: '#fff5e6'
     },
     {
-        id: 'white-sugar', // Changed back to match recipe references
+        id: 'white-sugar',
         name: 'White Sugar',
         description: 'Refined sugar that adds sweetness to any recipe.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/White Sugar.png',
         color: '#ffffff'
     },
@@ -20,7 +20,7 @@ const ingredients = [
         id: 'egg',
         name: 'Egg',
         description: 'A common binding agent used in cooking and baking.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Egg.png',
         color: '#ffe0b3'
     },
@@ -28,7 +28,7 @@ const ingredients = [
         id: 'vanilla',
         name: 'Vanilla',
         description: 'A fragrant flavoring extracted from vanilla pods.',
-        category: 'botanical',
+        category: ['food', 'botanical', 'essence'],
         image: 'assets/images/Vanilla.png',
         color: '#f5e3c4'
     },
@@ -38,7 +38,7 @@ const ingredients = [
         id: 'azure-cream',
         name: 'Azure Moon Cream',
         description: 'Legendary cream harvested under a blue moon. Glows with ethereal light.',
-        category: 'food legendary',
+        category: ['legendary', 'food'],
         image: 'assets/images/Azure Moon Cream.png',
         color: '#8eb8e5'
     },
@@ -46,7 +46,7 @@ const ingredients = [
         id: 'star-sugar',
         name: 'Star Sugar',
         description: 'Crystallized sweetness that fell from the stars. Sparkles with cosmic energy.',
-        category: 'food legendary',
+        category: ['legendary', 'food'],
         image: 'assets/images/Star Sugar.png',
         color: '#e0e0ff'
     },
@@ -54,7 +54,7 @@ const ingredients = [
         id: 'lunar-egg',
         name: 'Lunar-Dodo Egg',
         description: 'An egg from the rare Lunar-Dodo bird. Emits a soft blue glow.',
-        category: 'food legendary',
+        category: ['legendary', 'food'],
         image: 'assets/images/Lunar-Dodo Egg.png',
         color: '#c4d8f5'
     },
@@ -62,7 +62,7 @@ const ingredients = [
         id: 'starsoaked-vanilla',
         name: 'Starsoaked Vanilla',
         description: 'Vanilla beans that have been bathed in starlight for a full lunar cycle.',
-        category: 'food legendary botanical',
+        category: ['legendary', 'botanical', 'food', 'essence'],
         image: 'assets/images/Starsoaked Vanilla.png',
         color: '#d2c4f5'
     },
@@ -70,7 +70,7 @@ const ingredients = [
         id: 'night-sky',
         name: 'Distillation of a Night Sky',
         description: 'The essence of a perfect night sky captured in a bottle. Contains stardust and dreams.',
-        category: 'legendary',
+        category: ['legendary', 'essence'],
         image: 'assets/images/Distillation of a Night Sky.png',
         color: '#0a1a3f'
     },
@@ -78,7 +78,7 @@ const ingredients = [
         id: 'flavor-matrix',
         name: 'Flavor Matrix',
         description: 'Made from the distillation of Candy Elemental, this crystallized flavor matrix can radically expand the flavor profile of many food items- and even unlock the hidden potential of some ingredients.',
-        category: 'legendary',
+        category: ['legendary'],
         image: 'assets/images/Flavor Matrix.png',
         color: '#7986cb'
     },
@@ -86,7 +86,7 @@ const ingredients = [
         id: 'turbonado-sugar',
         name: 'Turbonado Sugar',
         description: 'With the awesome gastronomic might of the flavor matrix, even plain white sugar can be elevated to godly tiers of taste sensation!',
-        category: 'legendary',
+        category: ['legendary', 'food'],
         image: 'assets/images/TurbonadoSugar.png',
         color: '#b39ddb'
     },
@@ -94,7 +94,7 @@ const ingredients = [
         id: 'liquid-pain',
         name: 'Liquid Pain',
         description: 'A shifting, blood‑red fluid pulsing as though alive, harvested from the shattered hearts of fiends—dangerous, potent, and steeped in dark magic.',
-        category: 'legendary food',
+        category: ['legendary', 'food', 'essence'],
         image: 'assets/images/Liquid Pain.png',
         color: '#8b0000'
     },
@@ -102,7 +102,7 @@ const ingredients = [
         id: 'touch-of-love',
         name: 'Touch of Love',
         description: 'The \'most common\' of Legendary Ingredients is one many can make themselves- but isn\'t it being so common a good thing? <3',
-        category: 'legendary exotic',  // Make sure it has both categories
+        category: ['legendary', 'exotic', 'essence'],
         image: 'assets/images/Touch of Love.png',
         color: '#ffb6c1'
     },
@@ -112,7 +112,7 @@ const ingredients = [
         id: 'wildflower-honey-cream',
         name: 'Wildflower Honey-Cream',
         description: 'A golden cream swirled with wildflower nectar, exuding the essence of springtime warmth and renewal.',
-        category: 'food botanical',
+        category: ['food', 'botanical'],
         image: 'assets/images/Wildflower Honey-Cream.bak.png',
         color: '#ffd700'
     },
@@ -120,7 +120,7 @@ const ingredients = [
         id: 'birch-syrup',
         name: 'Birch Syrup',
         description: 'A rare syrup tapped from ancient, enchanted birch trees; each drop resonates with the forest\'s whispered secrets.',
-        category: 'food botanical',
+        category: ['food', 'botanical'],
         image: 'assets/images/Birch Syrup.bak.png',
         color: '#8b4513'
     },
@@ -128,7 +128,7 @@ const ingredients = [
         id: 'chromatic-platinum',
         name: 'Chromatic Platinum',
         description: 'A resplendent metal alloy imbued with shifting prismatic hues, radiating a subtle magical aura.',
-        category: 'legendary mineral',
+        category: ['legendary', 'metal'],
         image: 'assets/images/Chromatic Platinum.png',
         color: '#e5e4e2'
     },
@@ -136,7 +136,7 @@ const ingredients = [
         id: 'dreamvapor',
         name: 'Dreamvapor',
         description: 'An ephemeral mist carrying the scents of lavender and lost lullabies, slipping away like a fragment of a fading dream.',
-        category: 'legendary',
+        category: ['legendary', 'essence'],
         image: 'assets/images/Dreamvapor.png',
         color: '#e6e6fa'
     },
@@ -144,7 +144,7 @@ const ingredients = [
         id: 'fractal-copper',
         name: 'Fractal Copper',
         description: 'A mysterious, ever-fractalizing metal whose intricate patterns appear only under the full moon\'s light.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/Fractal Copper.png',
         color: '#b87333'
     },
@@ -152,7 +152,7 @@ const ingredients = [
         id: 'defractor-prism',
         name: 'Defractor Prism',
         description: 'Differentiates magical, material, and chemical processes, allowing for breakdown of materials into their components.',
-        category: 'rare mineral',
+        category: ['rare'],
         image: 'assets/images/Defractor Prism.png',
         color: '#f0f8ff'
     },
@@ -160,7 +160,7 @@ const ingredients = [
         id: 'glimmelectrum',
         name: 'Glimmelectrum',
         description: 'A radiant, mysterious alloy that hums with magical energy, capturing and reflecting light in mesmerizing patterns.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/Glimmelectrum.png',
         color: '#e5e4e2'
     },
@@ -168,7 +168,7 @@ const ingredients = [
         id: 'glimmergold',
         name: 'Glimmergold',
         description: 'A rare alchemical powder that sparkles like crushed sunlight, coveted by mages and merchants alike for its enigmatic properties.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/glimmergold.bak.png',
         color: '#ffd700'
     },
@@ -176,7 +176,7 @@ const ingredients = [
         id: 'sunset-essence',
         name: 'Sunset Essence',
         description: 'Captured at the fleeting moment of twilight, this radiant liquid holds the fading light of a dying day, evoking enchanting warmth and mystery.',
-        category: 'food rare',
+        category: ['rare', 'food', 'essence'],
         image: 'assets/images/Sunset Essence.png',
         color: '#ffa07a'
     },
@@ -184,7 +184,7 @@ const ingredients = [
         id: 'hemimetrichite',
         name: 'Hemimetrichite',
         description: 'A shimmering crystal with half-formed facets, said to harbor the memories of unfulfilled destinies and ancient lore.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/hemimetrichite.png',
         color: '#c0c0c0'
     },
@@ -192,7 +192,7 @@ const ingredients = [
         id: 'starshot-ore',
         name: 'Starshot Ore',
         description: 'A celestial metallic fragment believed to have fallen from the heavens; it glimmers with soft starlight even in utter darkness.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/Starshot Ore.png',
         color: '#e6e6fa'
     },
@@ -200,7 +200,7 @@ const ingredients = [
         id: 'orichalchite',
         name: 'Orichalchite',
         description: 'Often called "orichalcum\'s ghost," this peculiar mineral shifts between the material and ethereal realms, evoking lost legends.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/Orichalchite.png',
         color: '#daa520'
     },
@@ -208,23 +208,15 @@ const ingredients = [
         id: 'jadicine',
         name: 'Jadicine',
         description: 'A translucent green substance, rumored to be distilled from the tears of a jade dragon, soothing the mind and mending wounds.',
-        category: 'exotic mineral',
+        category: ['exotic'],
         image: 'assets/images/Jadicine.png',
         color: '#90ee90'
-    },
-    {
-        id: 'liquid-pain',
-        name: 'Liquid Pain',
-        description: 'A shifting, blood‑red fluid pulsing as though alive, harvested from the shattered hearts of fiends—dangerous, potent, and steeped in dark magic.',
-        category: 'legendary food',
-        image: 'assets/images/Liquid Pain.png',
-        color: '#8b0000'
     },
     {
         id: 'matrix-malachite',
         name: 'Matrix Malachite',
         description: 'A stone of intricate interlocking veins, its mystifying patterns hint at the buried wisdom of ancient sages.',
-        category: 'mineral',
+        category: ['metal'],
         image: 'assets/images/matrixmalachite.png',
         color: '#2e8b57'
     },
@@ -232,7 +224,7 @@ const ingredients = [
         id: 'prismatic-activator',
         name: 'Prismatic Activator',
         description: 'A dazzling device shimmering with the full spectrum of colors, designed to unlock hidden magical potentials with a decisive spark.',
-        category: 'legendary rare',
+        category: ['legendary', 'rare'],
         image: 'assets/images/Prismatic Activator.png',
         color: '#ff69b4'
     },
@@ -240,7 +232,7 @@ const ingredients = [
         id: 'rock-salt',
         name: 'Rock Salt',
         description: 'A coarse, naturally occurring crystalline salt harvested from ancient deposits. It lends a distinct crunch and subtle brininess to recipes.',
-        category: 'mineral',
+        category: ['metal', 'food'],
         image: 'assets/images/Rock Salt.png',
         color: '#e0e0e0'
     },
@@ -248,7 +240,7 @@ const ingredients = [
         id: 'flour',
         name: 'Flour',
         description: 'A finely milled powder ground from high-quality grains, known for its versatile binding properties and delicate, neutral flavor.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Flour.png',
         color: '#fff5e6'
     },
@@ -256,23 +248,23 @@ const ingredients = [
         id: 'spring-water',
         name: 'Spring Water',
         description: 'Pure water drawn from pristine natural springs, enriched with essential minerals to enhance the clarity and freshness of any culinary creation.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Spring Water.png',
         color: '#e6f3ff'
     },
     {
         id: 'savour-herb',
         name: 'Savour Herb',
-        description: 'A fragrant herb blend that brings out the savory essence in any dish.',
-        category: 'food botanical',
+        description: 'A common botanical with a rich, savory aroma.',
         image: 'assets/images/Savour Herb.png',
-        color: '#567d46'
+        category: ['botanical'],
+        defaultCount: 5
     },
     {
         id: 'sweetleaf',
         name: 'Sweetleaf',
         description: 'Naturally sweet leaves that add a delicate sweetness without overpowering other flavors.',
-        category: 'food botanical',
+        category: ['food', 'botanical'],
         image: 'assets/images/Sweetleaf.png',
         color: '#98fb98'
     },
@@ -280,7 +272,7 @@ const ingredients = [
         id: 'tastetanium-crystal',
         name: 'Tastetanium Crystal',
         description: 'This anomalous crystalline lattice of freestate energy interacts with ingredients to create new and novel building blocks for taste sensation! It\'s also incredibly durable, but who cares about that?',
-        category: 'legendary mineral food',
+        category: ['legendary', 'metal', 'food'],
         image: 'assets/images/Tastetanium Crystal.png',
         color: '#b19cd9'
     },
@@ -288,7 +280,7 @@ const ingredients = [
         id: 'butter',
         name: 'Butter',
         description: 'A rich, creamy spread made from churned cream and salt. Essential for countless recipes.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Butter.png',
         color: '#fff4c4'
     },
@@ -296,7 +288,7 @@ const ingredients = [
         id: 'whipped-butter',
         name: 'Whipped White Butter',
         description: 'Light and airy butter whipped to perfection. Spreads like a dream.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Whipped White Butter.png',
         color: '#fffff0'
     },
@@ -304,7 +296,7 @@ const ingredients = [
         id: 'herb-butter',
         name: 'Herb Butter',
         description: 'Delicious and flavorful, with hints of savory rosemary and garlic common to savourherb.',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Herb Butter.png',
         color: '#e6ffe6'
     },
@@ -312,9 +304,113 @@ const ingredients = [
         id: 'magibutter',
         name: 'Magibutter',
         description: 'This incredibutter brings all of the flavor and joy of butter, with all of the protein and vitamins and minerals, but somehow no calories! Whoa!',
-        category: 'food',
+        category: ['food'],
         image: 'assets/images/Magibutter.png',
         color: '#e6e6fa'
+    },
+    {
+        id: 'yarn',
+        name: 'Yarn',
+        description: 'Finely spun fiber used in weaving and knitting, prized for its delicate texture and potential enchantments in crafted garments.',
+        category: ['textile'],
+        image: 'assets/images/Yarn.png',
+        color: '#d9a066'
+    },
+    {
+        id: 'darkessence',
+        name: 'Darkessence',
+        description: 'A mysterious, shadow-infused essence that exudes an aura of hidden power, often employed in dark magical rites.',
+        category: ['legendary', 'essence'],
+        image: 'assets/images/Darkessence.png',
+        color: '#301934'
+    },
+    {
+        id: 'plasticizer',
+        name: 'Plasticizer',
+        description: 'A transformative substance used to soften and mold plastics, enabling materials to be fashioned into flexible forms.',
+        category: ['essence'],
+        image: 'assets/images/Plasticizer.png',
+        color: '#a3c1ad'
+    },
+    {
+        id: 'vitalium',
+        name: 'Vitalium',
+        description: 'A shimmering metal imbued with the essence of life, frequently harnessed to empower enchanting constructs and devices.',
+        category: ['crystal', 'exotic'],
+        image: 'assets/images/Vitalium.png',
+        color: '#7cfc00'
+    },
+    {
+        id: 'vitalocanum',
+        name: 'Vitalocanum',
+        description: 'A potent compound derived from Vitalium, renowned for its ability to bridge the gap between vitality and arcane energies.',
+        category: ['crystal', 'exotic'],
+        image: 'assets/images/Vitalocanum.png',
+        color: '#7fff00'
+    },
+    {
+        id: 'adhesive',
+        name: 'Adhesive',
+        description: 'A highly effective, sticky substance with powerful bonding properties, ideal for uniting disparate materials into one cohesive whole.',
+        category: ['essence'],
+        image: 'assets/images/Adhesive.png',
+        color: '#ffff99'
+    },
+    {
+        id: 'cotton-fluff',
+        name: 'Cotton Fluff',
+        description: 'A soft, airy fluff derived from cotton fibers, cherished for its light, cushioning properties and gentle texture.',
+        category: ['textile', 'crafted'],
+        image: 'assets/images/Cotton Fluff.png',
+        color: '#ffffff'
+    },
+    {
+        id: 'plastic-sheeting',
+        name: 'Plastic Sheeting',
+        description: 'A thin yet durable layer of plastic engineered for protective coverings, waterproofing, and precise industrial applications.',
+        category: ['crafted', 'textile'],
+        image: 'assets/images/Plastic Sheeting.png',
+        color: '#e0e0e0'
+    },
+    {
+        id: 'petrodistillate',
+        name: 'Petrodistillate',
+        description: 'A refined, volatile extract from crude oil, known for its flammable characteristics and use in catalyzing various reactions.',
+        category: ['essence'],
+        image: 'assets/images/Petrodistillate.png',
+        color: '#2f4f4f'
+    },
+    {
+        id: 'robusca',
+        name: 'Robusca',
+        description: 'A dense, robust crystalline alloy prized for its exceptional strength and durability, ideal for crafting heavy-duty tools and resilient structures.',
+        category: ['crystal'],
+        image: 'assets/images/Robusca.png',
+        color: '#708090'
+    },
+    {
+        id: 'solvent',
+        name: 'Solvent',
+        description: 'A volatile liquid compound known for its ability to dissolve and extract substances, essential in various alchemical and industrial processes.',
+        category: ['essence'],
+        image: 'assets/images/Solvent.png',
+        color: '#87ceeb'
+    },
+    {
+        id: 'barkgum',
+        name: 'Barkgum',
+        description: 'A sticky and rubbery organic compound refined from the sap of certain types of trees. It is used as a base to make an enormous array of products from chewing-gum to glue to rubber.',
+        category: ['botanical'],
+        image: 'assets/images/Barkgum.png',
+        color: '#8b4513'
+    },
+    {
+        id: 'berrimaters',
+        name: 'Berrimaters',
+        description: 'Small, round, savory and sweet, these cherry-red little guys are awfully fun to eat! And they pair well with many treats, so you can flex your cooking feats!',
+        category: ['botanical', 'food'],
+        image: 'assets/images/Berrimaters.png',
+        color: '#c41e3a'
     }
 ];
 
@@ -329,7 +425,11 @@ function initializeInventory() {
         
         // Give starting amounts
         ingredients.forEach(ingredient => {
-            playerInventory[ingredient.id] = ingredient.category.includes('legendary') ? 2 : 5;
+            const isLegendary = Array.isArray(ingredient.category) 
+                ? ingredient.category.includes('legendary') 
+                : ingredient.category === 'legendary';
+            
+            playerInventory[ingredient.id] = isLegendary ? 2 : 5;
         });
         
         // Save to localStorage with error checking
@@ -363,9 +463,16 @@ function getIngredientById(id) {
     return ingredients.find(ingredient => ingredient.id === id);
 }
 
+// Update the getIngredientsByCategory function to work with the new array format
 function getIngredientsByCategory(category) {
     if (category === 'all') {
         return ingredients;
     }
-    return ingredients.filter(ingredient => ingredient.category.includes(category));
+    return ingredients.filter(ingredient => {
+        if (Array.isArray(ingredient.category)) {
+            return ingredient.category.includes(category);
+        } else {
+            return ingredient.category === category;
+        }
+    });
 }

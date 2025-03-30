@@ -178,18 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Track discovered recipes
-    // let discoveredRecipes = {};
-    
-    // Initialize player inventory and crafted items
-    // let craftedInventory = {};
-    
-    // Load or initialize crafted inventory from localStorage
-    // const savedCraftedItems = localStorage.getItem('craftedInventory');
-    // if (savedCraftedItems) {
-    //     craftedInventory = JSON.parse(savedCraftedItems);
-    // }
-
     // Add collapse functionality for crafted items drawer
     const collapseBtn = document.querySelector('.collapse-btn');
     if (collapseBtn) {
@@ -217,7 +205,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     brewButton.addEventListener('click', brewPotion);
     
-    // Category filter buttons
+    // Update category buttons to match the ingredient categories
+    const categories = [
+        { id: 'all', label: 'All' },
+        { id: 'botanical', label: 'Botanicals' },
+        { id: 'crystal', label: 'Crystals' },
+        { id: 'metal', label: 'Metals' },
+        { id: 'essence', label: 'Essences' },
+        { id: 'food', label: 'Food' },
+        { id: 'legendary', label: 'Legendary' }
+    ];
+    
+    // Set up category filter buttons
     categoryButtons.forEach(button => {
         button.addEventListener('click', function() {
             categoryButtons.forEach(btn => btn.classList.remove('active'));
@@ -225,6 +224,31 @@ document.addEventListener('DOMContentLoaded', function() {
             loadIngredients(this.dataset.category);
         });
     });
+    
+    // Also update compendium category buttons
+    const compCategoryButtonContainer = document.querySelector('.comp-category-buttons');
+    if (compCategoryButtonContainer) {
+        compCategoryButtonContainer.innerHTML = ''; // Clear existing buttons
+        
+        categories.forEach(category => {
+            const button = document.createElement('button');
+            button.className = 'comp-category-btn';
+            button.dataset.category = category.id;
+            button.textContent = category.label;
+            
+            if (category.id === 'all') {
+                button.classList.add('active');
+            }
+            
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.comp-category-btn').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                loadCompendiumItems(this.dataset.category);
+            });
+            
+            compCategoryButtonContainer.appendChild(button);
+        });
+    }
     
     // Compendium category filter buttons
     compCategoryButtons.forEach(button => {
@@ -267,12 +291,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const resultName = document.getElementById('result-name').textContent;
         
         try {
-            // Add crafted item to regular inventory instead of separate crafted inventory
+            // Find the matching recipe by result name
             const recipe = recipes.find(r => r.result.name === resultName);
             if (recipe) {
+                // Add to player inventory
                 playerInventory[recipe.id] = (playerInventory[recipe.id] || 0) + 1;
-                const saved = localStorage.setItem('playerInventory', JSON.stringify(playerInventory));
-                console.log('Save successful:', saved);
+                
+                // Also track in crafted inventory to ensure it shows in the crafted items drawer
+                craftedInventory[recipe.id] = (craftedInventory[recipe.id] || 0) + 1;
+                
+                // Track in playerCraftedItems for count display
+                playerCraftedItems[recipe.id] = (playerCraftedItems[recipe.id] || 0) + 1;
+                
+                // Save all inventory changes
+                localStorage.setItem('playerInventory', JSON.stringify(playerInventory));
+                localStorage.setItem('craftedInventory', JSON.stringify(craftedInventory));
+                localStorage.setItem('playerCraftedItems', JSON.stringify(playerCraftedItems));
+                
+                console.log(`Added ${recipe.result.name} (${recipe.id}) to inventory and crafted items`);
+                
+                // Update the crafted items display
+                updateCraftedItemsDisplay();
+            } else {
+                console.error('Recipe not found for result:', resultName);
             }
             
             // Update inventory display
@@ -299,8 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const recipe = recipes.find(r => r.result.name === itemName);
             if (recipe) {
                 const img = document.createElement('img');
-                // Use craftedImage (tiny version) if available, otherwise use regular image
-                img.src = recipe.result.craftedImage || recipe.result.image;
+                img.src = recipe.result.image;
                 img.alt = itemName;
                 img.title = itemName;
                 itemElement.appendChild(img);
@@ -312,6 +352,73 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             container.appendChild(itemElement);
+        });
+    }
+
+    function displayCraftedItems() {
+        const craftedContainer = document.getElementById('crafted-items-container');
+        craftedContainer.innerHTML = '';
+        
+        console.log("Displaying crafted items:", craftedItems);
+        
+        Object.keys(craftedItems).forEach(itemId => {
+            const count = craftedItems[itemId];
+            if (count > 0) {
+                const recipe = recipes.find(r => r.id === itemId);
+                if (recipe && recipe.result) {
+                    const itemBox = document.createElement('div');
+                    itemBox.className = 'item-box crafted-item';
+                    itemBox.dataset.id = itemId;
+                    
+                    // Log the recipe we're trying to display
+                    console.log(`Creating crafted item display for: ${recipe.id}`, recipe.result);
+                    
+                    const img = document.createElement('img');
+                    // Ensure image path includes assets/images/ prefix
+                    let imagePath = recipe.result.image;
+                    if (!imagePath.includes('assets/images/') && !imagePath.includes(':\\')) {
+                        imagePath = 'assets/images/' + imagePath;
+                    }
+                    img.src = imagePath;
+                    img.alt = recipe.result.name;
+                    
+                    // Add error handling for image loading
+                    img.onerror = function() {
+                        console.error(`Failed to load image for ${recipe.id}: ${imagePath}`);
+                        // Try alternate image path if available
+                        if (recipe.result.craftedImage) {
+                            const altImagePath = recipe.result.craftedImage;
+                            console.log(`Trying alternate image path: ${altImagePath}`);
+                            img.src = altImagePath;
+                        } else {
+                            // Use a placeholder
+                            img.src = 'assets/images/placeholder.png';
+                        }
+                    };
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = recipe.result.name;
+                    
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'count-badge';
+                    countSpan.textContent = count;
+                    
+                    itemBox.appendChild(img);
+                    itemBox.appendChild(nameSpan);
+                    itemBox.appendChild(countSpan);
+                    
+                    // Add event listener for item details
+                    itemBox.addEventListener('click', function() {
+                        showCraftedItemDetails(recipe.result);
+                    });
+                    
+                    craftedContainer.appendChild(itemBox);
+                    
+                    console.log(`Displayed crafted item: ${recipe.result.name}, image: ${img.src}`);
+                } else {
+                    console.warn(`No recipe found for crafted item: ${itemId}`);
+                }
+            }
         });
     }
 
@@ -734,8 +841,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check if we can brew a potion and enable/disable button
     function checkBrewButton() {
-        // Remove requirement for all slots - let the recipe validation handle it
-        brewButton.disabled = false;
+        const brewBtn = document.getElementById('brew-btn');
+        if (brewBtn) {
+            // Logic for enabling/disabling the brew button
+            const hasIngredients = Object.values(slotContents).some(slot => slot !== null);
+            
+            // Toggle button state based on whether there are ingredients
+            if (hasIngredients) {
+                brewBtn.classList.remove('disabled');
+                brewBtn.src = "assets/images/button1a.png"; // Active state with higher resolution
+                brewBtn.style.cursor = "pointer";
+            } else {
+                brewBtn.classList.add('disabled');
+                brewBtn.src = "assets/images/button.png"; // Inactive state
+                brewBtn.style.cursor = "not-allowed";
+            }
+        }
     }
     
     // Brew the potion when button is clicked (now called "Craft")
@@ -1303,11 +1424,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Helper function to get ingredient by ID
     function getIngredientById(id) {
-        if (!ingredients) {
-            console.error('Ingredients data not loaded!');
-            return null;
+        // First check ingredients array
+        const ingredient = ingredients.find(ing => ing.id === id);
+        if (ingredient) return ingredient;
+        
+        // Then check recipe results (for crafted items)
+        for (const recipe of recipes) {
+            if (recipe.result && (recipe.result.id === id || recipe.id === id)) {
+                return recipe.result;
+            }
         }
-        return ingredients.find(i => i.id === id);
+        
+        return null;
     }
 
     // Function to find matching recipe - improved to handle similar recipes like herb butter vs typical butter
@@ -1420,4 +1548,524 @@ document.addEventListener('DOMContentLoaded', function() {
             return recipe.ingredients.every(id => nonExoticIngredients.includes(id));
         });
     }
+
+    // Helper function to handle crafted items correctly
+    function updateCraftedItemsDisplay() {
+        const container = document.getElementById('crafted-items-container');
+        if (!container) {
+            console.error('Crafted items container not found!');
+            return;
+        }
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        // Debug log
+        console.log('Updating crafted items display');
+        console.log('Player inventory:', playerInventory);
+        console.log('Crafted inventory:', craftedInventory);
+        console.log('Player crafted items:', playerCraftedItems);
+        
+        // Check all recipes, including Lovely Vanilla Ice Cream
+        let craftedCount = 0;
+        
+        // We need to check both playerInventory and craftedInventory
+        recipes.forEach(recipe => {
+            if (!recipe || !recipe.id) return;
+            
+            // Check for this recipe in both inventories
+            let count = 0;
+            if (playerInventory && playerInventory[recipe.id]) {
+                count += playerInventory[recipe.id];
+            }
+            if (craftedInventory && craftedInventory[recipe.id]) {
+                count += craftedInventory[recipe.id];
+            }
+            
+            // Create crafted item element if count > 0
+            if (count > 0) {
+                craftedCount++;
+                
+                // Create element
+                const itemElement = document.createElement('div');
+                itemElement.className = 'crafted-item';
+                
+                // Add appropriate classes based on category
+                if (recipe.result.category) {
+                    // Handle both string and array formats
+                    if (typeof recipe.result.category === 'string') {
+                        if (recipe.result.category.includes('food')) {
+                            itemElement.classList.add('food');
+                        }
+                        if (recipe.result.category.includes('legendary')) {
+                            itemElement.classList.add('legendary');
+                        }
+                    } else if (Array.isArray(recipe.result.category)) {
+                        if (recipe.result.category.includes('food')) {
+                            itemElement.classList.add('food');
+                        }
+                        if (recipe.result.category.includes('legendary')) {
+                            itemElement.classList.add('legendary');
+                        }
+                    }
+                }
+                
+                // Add the image
+                const img = document.createElement('img');
+                const imagePath = recipe.result.image;
+                
+                // Handle Lovely Vanilla Ice Cream specially if needed
+                if (recipe.id === 'lovely-vanilla-ice-cream') {
+                    console.log('Adding Lovely Vanilla Ice Cream to crafted items');
+                }
+                
+                img.src = imagePath;
+                img.alt = recipe.result.name;
+                img.title = recipe.result.name;
+                
+                // Better error handling for image loading
+                img.onerror = function() {
+                    console.warn(`Failed to load crafted item image: ${img.src}`);
+                    this.onerror = null;
+                    
+                    // Try with assets/images/ prefix if it's missing
+                    if (!img.src.includes('assets/images/')) {
+                        img.src = 'assets/images/' + imagePath;
+                    } else {
+                        this.src = 'assets/images/placeholder.png';
+                    }
+                };
+                
+                itemElement.appendChild(img);
+                
+                // Add count badge
+                const countBadge = document.createElement('span');
+                countBadge.className = 'crafted-count';
+                countBadge.textContent = count;
+                itemElement.appendChild(countBadge);
+                
+                container.appendChild(itemElement);
+            }
+        });
+        
+        // Show message if no crafted items
+        if (craftedCount === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.style.padding = '10px';
+            emptyMsg.style.textAlign = 'center';
+            emptyMsg.style.color = '#aaa';
+            emptyMsg.textContent = 'No crafted items yet';
+            container.appendChild(emptyMsg);
+        }
+        
+        console.log(`Displayed ${craftedCount} crafted items`);
+    }
+
+    // Add the tooltip container to the DOM
+    function createTooltipContainer() {
+        // Check if tooltip container already exists
+        if (document.getElementById('item-tooltip')) {
+            return;
+        }
+        
+        const tooltipContainer = document.createElement('div');
+        tooltipContainer.id = 'item-tooltip';
+        tooltipContainer.className = 'item-tooltip';
+        tooltipContainer.style.display = 'none';
+        tooltipContainer.style.position = 'fixed';
+        tooltipContainer.style.zIndex = '1000';
+        tooltipContainer.style.background = '#1e2128';
+        tooltipContainer.style.border = '2px solid #3a4049';
+        tooltipContainer.style.borderRadius = '8px';
+        tooltipContainer.style.padding = '12px';
+        tooltipContainer.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.5)';
+        tooltipContainer.style.maxWidth = '320px';
+        tooltipContainer.style.color = '#e0e0e0';
+        tooltipContainer.style.fontSize = '14px';
+        tooltipContainer.style.pointerEvents = 'none'; // Prevent the tooltip from capturing mouse events
+        
+        document.body.appendChild(tooltipContainer);
+    }
+
+    // Show tooltip with item info at mouse position
+    function showItemTooltip(item, event) {
+        event.preventDefault(); // Prevent the default context menu
+        
+        // Create tooltip container if it doesn't exist
+        createTooltipContainer();
+        
+        const tooltip = document.getElementById('item-tooltip');
+        if (!tooltip) return;
+        
+        // Fix: Ensure we're using valid item data
+        if (!item || !item.name) {
+            console.warn('Attempted to show tooltip for invalid item:', item);
+            return;
+        }
+        
+        // Build tooltip content
+        tooltip.innerHTML = '';
+        
+        // Container for image and name (header)
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '8px';
+        
+        // Item image
+        const img = document.createElement('img');
+        img.src = item.image;
+        if (!img.src.includes('assets/images/') && !img.src.includes(':\\')) {
+            img.src = 'assets/images/' + item.image;
+        }
+        img.style.width = '48px';
+        img.style.height = '48px';
+        img.style.objectFit = 'contain';
+        img.style.marginRight = '10px';
+        img.style.borderRadius = '4px';
+        img.style.border = item.category?.includes('legendary') ? '2px solid gold' : '1px solid #555';
+        
+        // Error fallback
+        img.onerror = function() {
+            this.onerror = null;
+            this.src = 'assets/images/placeholder.png';
+        };
+        
+        // Item name
+        const name = document.createElement('h3');
+        name.textContent = item.name;
+        name.style.margin = '0';
+        name.style.fontSize = '18px';
+        name.style.color = item.category?.includes('legendary') ? '#ffd700' : '#ffffff';
+        
+        header.appendChild(img);
+        header.appendChild(name);
+        tooltip.appendChild(header);
+        
+        // Category badges
+        const categories = document.createElement('div');
+        categories.style.display = 'flex';
+        categories.style.flexWrap = 'wrap';
+        categories.style.gap = '4px';
+        categories.style.marginBottom = '8px';
+        
+        if (item.category) {
+            const categoryList = Array.isArray(item.category) ? item.category : [item.category];
+            categoryList.forEach(cat => {
+                const badge = document.createElement('span');
+                badge.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+                badge.style.padding = '2px 6px';
+                badge.style.borderRadius = '4px';
+                badge.style.fontSize = '11px';
+                badge.style.backgroundColor = getCategoryColor(cat);
+                badge.style.color = '#fff';
+                categories.appendChild(badge);
+            });
+        }
+        
+        tooltip.appendChild(categories);
+        
+        // Description
+        if (item.description) {
+            const desc = document.createElement('p');
+            desc.textContent = item.description;
+            desc.style.margin = '6px 0';
+            desc.style.fontSize = '14px';
+            tooltip.appendChild(desc);
+        }
+        
+        // Effects (if present)
+        if (item.effects) {
+            const effectsTitle = document.createElement('h4');
+            effectsTitle.textContent = 'Effects:';
+            effectsTitle.style.margin = '8px 0 2px 0';
+            effectsTitle.style.fontSize = '15px';
+            effectsTitle.style.color = '#afd5ff';
+            
+            const effects = document.createElement('p');
+            effects.textContent = item.effects;
+            effects.style.margin = '4px 0 8px 0';
+            effects.style.fontSize = '13px';
+            
+            tooltip.appendChild(effectsTitle);
+            tooltip.appendChild(effects);
+        }
+        
+        // Recipe ingredients (for crafted items)
+        const recipe = recipes.find(r => r.result.name === item.name);
+        if (recipe) {
+            const ingredientsTitle = document.createElement('h4');
+            ingredientsTitle.textContent = 'Recipe:';
+            ingredientsTitle.style.margin = '8px 0 4px 0';
+            ingredientsTitle.style.fontSize = '15px';
+            ingredientsTitle.style.color = '#b8e986';
+            
+            const ingredientsList = document.createElement('div');
+            ingredientsList.style.display = 'flex';
+            ingredientsList.style.flexWrap = 'wrap';
+            ingredientsList.style.gap = '6px';
+            
+            // Add regular ingredients
+            recipe.ingredients.forEach(ingId => {
+                const ing = getIngredientById(ingId);
+                if (ing) {
+                    const ingItem = document.createElement('div');
+                    ingItem.style.width = '32px';
+                    ingItem.style.height = '32px';
+                    ingItem.style.position = 'relative';
+                    ingItem.style.border = '1px solid #555';
+                    ingItem.style.borderRadius = '4px';
+                    ingItem.style.overflow = 'hidden';
+                    
+                    const ingImg = document.createElement('img');
+                    let imagePath = ing.image;
+                    if (!imagePath.includes('assets/images/') && !imagePath.includes(':\\')) {
+                        imagePath = 'assets/images/' + imagePath;
+                    }
+                    ingImg.src = imagePath;
+                    ingImg.style.width = '100%';
+                    ingImg.style.height = '100%';
+                    ingImg.style.objectFit = 'contain';
+                    ingImg.title = ing.name;
+                    
+                    ingItem.appendChild(ingImg);
+                    ingredientsList.appendChild(ingItem);
+                }
+            });
+            
+            // Add exotic ingredient if present
+            if (recipe.exoticIngredient) {
+                const exoticIng = getIngredientById(recipe.exoticIngredient);
+                if (exoticIng) {
+                    const exoticItem = document.createElement('div');
+                    exoticItem.style.width = '32px';
+                    exoticItem.style.height = '32px';
+                    exoticItem.style.position = 'relative';
+                    exoticItem.style.border = '2px solid gold';
+                    exoticItem.style.borderRadius = '4px';
+                    exoticItem.style.overflow = 'hidden';
+                    
+                    const exoticImg = document.createElement('img');
+                    let imagePath = exoticIng.image;
+                    if (!imagePath.includes('assets/images/') && !imagePath.includes(':\\')) {
+                        imagePath = 'assets/images/' + imagePath;
+                    }
+                    exoticImg.src = imagePath;
+                    exoticImg.style.width = '100%';
+                    exoticImg.style.height = '100%';
+                    exoticImg.style.objectFit = 'contain';
+                    exoticImg.title = exoticIng.name + ' (Exotic)';
+                    
+                    exoticItem.appendChild(exoticImg);
+                    ingredientsList.appendChild(exoticItem);
+                }
+            }
+            
+            tooltip.appendChild(ingredientsTitle);
+            tooltip.appendChild(ingredientsList);
+        }
+        
+        // Position tooltip near the mouse
+        tooltip.style.display = 'block';
+        positionTooltip(tooltip, event);
+    }
+
+    // Get a color based on category
+    function getCategoryColor(category) {
+        const colors = {
+            'food': '#8d6e63',
+            'essence': '#7986cb',
+            'crystal': '#4db6ac',
+            'metal': '#78909c',
+            'botanical': '#81c784',
+            'textile': '#ce93d8',
+            'herb': '#81c784',
+            'legendary': '#ffd54f',
+            'crafted': '#90a4ae',
+            'exotic': '#ff8a65'
+        };
+        
+        return colors[category.toLowerCase()] || '#757575';
+    }
+
+    // Hide the tooltip
+    function hideItemTooltip() {
+        const tooltip = document.getElementById('item-tooltip');
+        if (tooltip) {
+            tooltip.style.display = 'none';
+        }
+    }
+
+    // Position the tooltip near the mouse
+    function positionTooltip(tooltip, event) {
+        const padding = 15; // Space between mouse and tooltip
+        
+        // Get mouse position
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
+        
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Get tooltip dimensions
+        const tooltipWidth = tooltip.offsetWidth;
+        const tooltipHeight = tooltip.offsetHeight;
+        
+        // Default position (right and below the cursor)
+        let posX = mouseX + padding;
+        let posY = mouseY + padding;
+        
+        // Check if tooltip would go off the right edge
+        if (posX + tooltipWidth > viewportWidth) {
+            posX = mouseX - tooltipWidth - padding;
+        }
+        
+        // Check if tooltip would go off the bottom edge
+        if (posY + tooltipHeight > viewportHeight) {
+            posY = mouseY - tooltipHeight - padding;
+        }
+        
+        // Ensure tooltip doesn't go off the left or top edges
+        posX = Math.max(10, posX);
+        posY = Math.max(10, posY);
+        
+        // Set the position
+        tooltip.style.left = posX + 'px';
+        tooltip.style.top = posY + 'px';
+    }
+
+    // Document click handler to hide tooltip
+    document.addEventListener('click', function() {
+        hideItemTooltip();
+    });
+
+    // Add event listeners to ingredient items for tooltip functionality
+    function addTooltipListeners() {
+        // For ingredients in the drawer
+        document.querySelectorAll('.ingredient-item').forEach(item => {
+            item.addEventListener('contextmenu', function(e) {
+                const ingredientId = this.dataset.id;
+                const ingredient = getIngredientById(ingredientId);
+                if (ingredient) {
+                    showItemTooltip(ingredient, e);
+                }
+            });
+        });
+        
+        // For ingredients in the slots
+        document.querySelectorAll('.ingredient-slot').forEach(slot => {
+            slot.addEventListener('contextmenu', function(e) {
+                const position = this.dataset.position;
+                if (slotContents && slotContents[position]) {
+                    showItemTooltip(slotContents[position], e);
+                }
+            });
+        });
+        
+        // For crafted items - FIX HERE
+        document.querySelectorAll('#crafted-items-container .crafted-item').forEach(item => {
+            item.addEventListener('contextmenu', function(e) {
+                e.preventDefault(); // Prevent default context menu
+                
+                const recipeId = this.dataset.id;
+                console.log('Right-clicked crafted item with recipeId:', recipeId);
+                
+                if (recipeId) {
+                    const recipe = recipes.find(r => r.id === recipeId);
+                    if (recipe && recipe.result) {
+                        showItemTooltip(recipe.result, e);
+                    } else {
+                        console.warn('Could not find recipe with id:', recipeId);
+                    }
+                }
+            });
+        });
+    }
+
+    // Override loadIngredients to add tooltip functionality
+    const originalLoadIngredients = loadIngredients;
+    loadIngredients = function(category) {
+        originalLoadIngredients(category);
+        addTooltipListeners();
+    };
+
+    // Add direct tooltip support to displayCraftedItems
+    const originalDisplayCraftedItems = displayCraftedItems;
+    displayCraftedItems = function() {
+        // Call original function
+        originalDisplayCraftedItems();
+        
+        // Add our tooltip functionality with a slight delay to ensure DOM is ready
+        setTimeout(() => {
+            // Select all crafted items that don't have a context menu listener yet
+            document.querySelectorAll('#crafted-items-container .crafted-item').forEach(item => {
+                // Remove any existing contextmenu listeners to prevent duplicates
+                const clone = item.cloneNode(true);
+                item.parentNode.replaceChild(clone, item);
+                
+                // Add the tooltip functionality
+                clone.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    const recipeId = this.dataset.id;
+                    console.log('Showing tooltip for crafted item:', recipeId);
+                    
+                    const recipe = recipes.find(r => r.id === recipeId);
+                    if (recipe && recipe.result) {
+                        showItemTooltip(recipe.result, e);
+                    }
+                });
+            });
+            
+            console.log('Added tooltip listeners to crafted items');
+        }, 100);
+    };
+
+    // Add MutationObserver to specifically watch the crafted items container
+    const craftedItemsObserver = new MutationObserver(function(mutations) {
+        addTooltipListeners();
+    });
+
+    // Start observing the crafted items container specifically
+    document.addEventListener('DOMContentLoaded', function() {
+        const craftedItemsContainer = document.getElementById('crafted-items-container');
+        if (craftedItemsContainer) {
+            craftedItemsObserver.observe(craftedItemsContainer, { 
+                childList: true, 
+                subtree: true 
+            });
+        }
+    });
+
+    // Add CSS for tooltip
+    const tooltipStyle = document.createElement('style');
+    tooltipStyle.textContent = `
+        .item-tooltip {
+            transition: opacity 0.2s ease;
+            opacity: 1;
+        }
+    `;
+    document.head.appendChild(tooltipStyle);
+
+    // Initialize tooltip functionality
+    addTooltipListeners();
+
+    // MutationObserver to add tooltip listeners when DOM changes
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                addTooltipListeners();
+            }
+        });
+    });
+
+    // Start observing the document with the configured parameters
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Prevent context menu on ingredient containers
+    document.querySelectorAll('#ingredients-container, #crafted-items-container').forEach(container => {
+        container.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    });
 });

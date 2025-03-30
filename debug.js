@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Create debug panel
     const debugPanel = document.createElement('div');
+    debugPanel.id = 'debug-panel';
     debugPanel.style.position = 'fixed';
     debugPanel.style.bottom = '10px';
     debugPanel.style.right = '10px';
@@ -38,6 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     debugPanel.style.maxHeight = '300px';
     debugPanel.style.overflowY = 'auto';
     debugPanel.style.maxWidth = '400px';
+    debugPanel.style.transition = 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out';
     
     const debugTitle = document.createElement('h3');
     debugTitle.textContent = 'Debugging Info';
@@ -64,14 +66,50 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleButton.style.border = '1px solid #8d6e63';
     toggleButton.style.borderRadius = '3px';
     toggleButton.style.cursor = 'pointer';
+    toggleButton.style.position = 'absolute';
+    toggleButton.style.top = '5px';
+    toggleButton.style.right = '5px';
+    
+    // Track collapsed state
+    let panelCollapsed = false;
     
     toggleButton.addEventListener('click', function() {
-        if (debugContent.style.display === 'none') {
-            debugContent.style.display = 'block';
-            toggleButton.textContent = 'Hide Debug';
+        panelCollapsed = !panelCollapsed;
+        
+        if (panelCollapsed) {
+            // Hide the entire panel except for a small tab
+            debugPanel.style.transform = 'translateX(calc(100% - 40px))';
+            debugPanel.style.opacity = '0.7';
+            toggleButton.textContent = 'Show';
+            
+            // Hide all children except toggle button
+            Array.from(debugPanel.children).forEach(child => {
+                if (child !== toggleButton) {
+                    child.style.display = 'none';
+                }
+            });
         } else {
-            debugContent.style.display = 'none';
-            toggleButton.textContent = 'Show Debug';
+            // Show the panel
+            debugPanel.style.transform = 'translateX(0)';
+            debugPanel.style.opacity = '1';
+            toggleButton.textContent = 'Hide Debug';
+            
+            // Show all children
+            Array.from(debugPanel.children).forEach(child => {
+                if (child !== toggleButton) {
+                    child.style.display = '';
+                }
+            });
+            
+            // Specifically ensure content display is block
+            debugContent.style.display = 'block';
+        }
+    });
+    
+    // Add keyboard shortcut for toggle (Alt+D)
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 'd') {
+            toggleButton.click();
         }
     });
     
@@ -670,14 +708,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     width: style.width,
                     overflow: style.overflow
                 });
+            } else {
+                console.warn(`Channel ${channelId} not found`);
             }
         });
     }
     
-    // Add to debug panel
-    const checkAnimationBtn = document.createElement('button');
-    checkAnimationBtn.textContent = 'Check Channel Animations';
-    checkAnimationBtn.style.cssText = 'display: block; margin-top: 5px; padding: 5px; background-color: #4e342e; color: #fff; border: 1px solid #8d6e63; border-radius: 3px; cursor: pointer;';
-    checkAnimationBtn.addEventListener('click', checkChannelAnimation);
-    debugPanel.insertBefore(checkAnimationBtn, toggleButton);
+    // Add button to debug panel
+    const checkChannelBtn = document.createElement('button');
+    checkChannelBtn.textContent = 'Check Channel Animation';
+    checkChannelBtn.style.cssText = 'display: block; margin-top: 5px; padding: 5px; background-color: #4e342e; color: #fff; border: 1px solid #8d6e63; border-radius: 3px; cursor: pointer;';
+    
+    checkChannelBtn.addEventListener('click', checkChannelAnimation);
+    
+    // Add button before toggle button
+    debugPanel.insertBefore(checkChannelBtn, toggleButton);
 });

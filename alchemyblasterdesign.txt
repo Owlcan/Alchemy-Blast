@@ -1,0 +1,224 @@
+Vertical Rail Shooter – Level One: Lissome Plains
+=======================================================
+ Design Document
+=======================================================
+
+Overview
+--------
+This document outlines the requirements for a vertical rail shooter game that starts when an "Expedition button" is clicked. The game is survival and level based- with high score bonuses and rounds that keep looping until the player is defeated. Upon defeat or level completion, the player is rewarded with items for crafting. All assets, file paths, and functionality details are provided exactly as specified.
+
+===============================================
+1. Game Environment Layers
+===============================================
+
+A. Top Layers (Foreground/UI)
+-----------------------------
+- Foreground Image & UI Elements:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\lissomeplainsFG.png"
+    - Description:
+        • This image sits above all other game elements on the same screen that displays the score.
+        • It contains all UI elements including scoring. The score is overlaid with a legible font that features a drop shadow and outlining.
+        • The player character appears behind this layer, and as they move left and right, a parallax motion effect is created.
+        • Scoring details:
+             - 10 points per monster.
+             - 100 points per boss.
+             - A x2 bonus is applied for every 3 rounds completed.
+
+B. Player Layers
+----------------
+- This layer contains the player character sprite, health bar overlays, and projectile-related assets.  
+- Player Sprites:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\dereleft.png"
+       • The default player sprite. When firing a projectile, there is an offset to the left.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\dereright.png"
+       • The alternate player sprite facing right. When firing a projectile, the offset is to the right.
+- Health Bar Overlays:
+    • The three health bars are stacked on top of each other and are strictly bounded to the player sprite; they move in unison with the player.
+    • They are displayed in order from top (HP1) to bottom (HP3):
+         - File: "H:\repos\Crafting Tools\assets\images\darklings\derehp1.png"
+             • This is the top health overlay. When the player takes their first hit, this layer fades out.
+         - File: "H:\repos\Crafting Tools\assets\images\darklings\derehp2.png"
+             • This is the second health overlay and sits just below HP1. When the player takes another hit (after HP1 is gone), this layer fades out.
+         - File: "H:\repos\Crafting Tools\assets\images\darklings\derehp3.png"
+             • This is the third, lowest health overlay indicating a critical health state. When the player takes damage at this level (i.e. after the previous two have faded), the game is over.
+- Player Projectiles & Effects:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\shot1.png"
+         • Basic projectile; a small, round, blue ball that travels in a straight line.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\shot1a.png"
+         • Alternate basic projectile variant; occasionally fired.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\shot1b.png"
+         • Another alternate variation of the basic projectile.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\shotimpact1.png"
+         • Impact effect for the basic projectile; a small, round, blue explosion that expands from the enemy's center. When fully expanded, both the effect and the enemy fade out as "defeated."
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\shotimpact2.png"
+         • Alternate impact effect for the alternate projectile.
+
+C. Monster Layers
+-----------------
+- Monsters are displayed in this layer along with their unique movement patterns and attack functions.
+- Regular Monsters:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling1.png"
+         • Basic enemy sprite with simple movement. It does not fire projectiles and is defeated in one hit. If not defeated, it leaves the battlefield after 15 seconds.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling2.png"
+         • Second monster sprite with advanced movement. It fires a projectile every 5 seconds and is defeated in one hit.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling3.png"
+         • Third monster sprite. It has the basic movement of darkling1 but fires a projectile every 4 seconds and is defeated in one hit.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling5.png"
+         • Fifth monster sprite that fires two projectiles at a 45-degree offset towards the player. It appears starting in level 2, is slightly faster than earlier monsters, and is defeated in one hit.
+    - File: "H:\repos\CraftingTools\assets\images\darklings\darkling9.png"
+         • Ninth monster sprite. This rare enemy sometimes runs along the top of the screen, does not fire projectiles, and flees after 10 seconds. However, if defeated, it refills one HP.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling8.png"
+         • Eighth monster sprite. Appearing in stage 3 of Lissome Plains, it is a stronger variant that requires two hits to defeat and fires twice randomly every 5 seconds.
+- Advanced & Boss Monsters:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling4.png"
+         • Fourth monster sprite, the first boss monster. It raises a unique shield before firing a line of 10 projectiles at the player.
+         • After shield activation, the shield goes on a 20-second cooldown.
+         • Once the shield is down, it resumes firing 2 projectiles at randomized intervals every 3 seconds.
+         • Requires 20 hits to defeat.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling6.png"
+         • Sixth monster sprite; a stronger variant with enhanced attack capabilities. It flashes after taking its first hit and fires two 45-degree offset projectiles every 3 seconds. It is defeated in two hits.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling7.png"
+         • Seventh monster sprite, a boss that releases a wave of four projectiles at 15-degree offsets every 5 seconds. Additionally, it fires a single, fast projectile at 125% normal speed every 7 seconds. It is defeated in 10 hits.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darkling10.png"
+         • Tenth monster sprite; a stronger variant with random and chaotic attack patterns. It fires any type of previous projectile once every 5 seconds and teleports randomly every 10 seconds.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darklingboss1.png"
+         • Boss for level 2. It flashes a warning before firing a single, 120% sized projectile at 150% speed. This boss is slower than the first boss and requires 25 hits to defeat.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darklingboss2.png"
+         • Boss for level 3. This boss does not attack until it has been hit 5 times. After that, it charges and fires a line of 10 projectiles at 120% speed twice, then becomes faster until it charges again. Requires 30 hits to defeat.
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\darklingboss3.png"
+         • Final boss of Lissome Plains. She has a very fast, unpredictable movement pattern and teleports. Her attack pattern includes charging up for either three wide projectile bursts or a single line of 20 projectiles at 125% speed.
+         • Once she takes 20 hits, she becomes faster, begins to flash red, and becomes invulnerable while charging her next attack.
+         
+D. Background Layers
+---------------------
+- Background Image:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\lissomeplainsBG.png"
+    - Description:
+         • This image sits behind all other layers, forming the static backdrop of the game.
+
+E. Map Screen Assets
+---------------------
+- Map Thumbnail:
+    - File: "H:\repos\Crafting Tools\assets\images\darklings\lissomeplainsthumb.png"
+    - Usage:
+         • Utilized on the map screen to represent the level (Lissome Plains) with the same aesthetics as the other game windows.
+
+===============================================
+2. Gameplay Sequence
+===============================================
+
+A. Rounds & Waves
+------------------
+- Each round consists of a set number of enemy waves:
+    • Round 1: Contains 5 waves.
+    • Round 2: Contains 7 waves.
+    • Round 3: Contains 8 waves, followed by a boss wave, and then a final boss wave.
+- Each wave includes no fewer than 3 and no more than 5 monsters.
+- Monster Spawning:
+    • Monsters spawn in by fading into the screen, flying down from the bottom, or coming in from the sides.
+    • They are confined to a set bounding area near the center of the screen, though they may move in their own unique patterns according to their attack behaviors.
+    • When a monster is defeated, it fades out using its designated impact effect.
+- Post-Wave Transition:
+    • Once all monsters in a wave are defeated, a dialogue box appears prompting the player to get ready for the next round.
+    
+B. Player Controls & Interaction
+----------------------------------
+- Movement:
+    • The player character can only move left and right along the bottom of the screen.
+- Targeting Reticle:
+    • When the game is running, a target reticle (a bullseye with a crosshair) replaces the mouse cursor.
+    • The reticle is centered on the player’s sprite and is bound to it, though it can be moved around the enemy area.
+- Firing:
+    • The left mouse button is used to fire projectiles.
+    • Projectile origin offsets:
+         - When the player uses "H:\repos\Crafting Tools\assets\images\darklings\dereright.png", projectiles originate slightly to the north-east of the sprite.
+         - When using "H:\repos\Crafting Tools\assets\images\darklings\dereleft.png", projectiles originate slightly to the north-west.
+    • The right mouse button should either be disabled or repurposed as a pause control.
+
+C. Health & Power-Ups
+---------------------
+- The health system uses three layered health bars that are bound directly to the player sprite:
+    • "H:\repos\Crafting Tools\assets\images\darklings\derehp1.png" (top layer): Fades out on the first hit.
+    • "H:\repos\Crafting Tools\assets\images\darklings\derehp2.png" (middle layer): Fades out upon a second hit.
+    • "H:\repos\Crafting Tools\assets\images\darklings\derehp3.png" (bottom layer): Represents the final hitpoint; if the player takes damage while this layer is active (after the other two have faded), the game is over.
+- Occasionally, a monster will drop a health potion that falls toward the bottom of the screen. If the player collects it, one hit point is restored.
+
+D. Game Over & Level Completion
+---------------------------------
+- Game Over:
+    • Upon taking a fourth hit (after HP3 is damaged), the game displays the game over image:
+         - File: "H:\repos\Crafting Tools\assets\images\darklings\deregameover.png"
+    • The player is then given the option to:
+         - Try again,
+         - Return to the main menu,
+         - Or exit back to the alchemy station.
+    • A message then displays the items earned from their accumulated score.
+- Level Completion:
+    • If the player defeats the level, their score is tallied.
+    • A bonus multiplier of 6x is applied for completing all three levels.
+
+===============================================
+3. Reward System & Item Drops
+===============================================
+
+- After the game ends (either by game over or level completion), the player is awarded items based on their score.
+- Items are drawn from:
+    - File: "H:\repos\Crafting Tools\data\master-items.js"
+- For Lissome Plains, the potential rewards include:
+    • cotton fluff, eggs, butter, cream, birch flower, fractal copper, flour, rock salt, savour herb, sweetleaf, spring water, barkgum, and berrimaters.
+- If the player's score is over a predetermined threshold, they receive between 1 and 3 "Touch of Love" ingredients.
+- Additionally, if the level is beaten, there is a 25% chance to earn a "Distillation of a Night Sky" from the master-items.
+- Note: Crafted items should not be awarded unless they are also considered ingredients (for example, butter).
+
+===============================================
+4. Audio & Sound Effects
+===============================================
+
+All sound assets are located in:
+    "H:\repos\Crafting Tools\assets\sounds"
+
+A. Player Sounds:
+-----------------
+    - "H:\repos\Crafting Tools\assets\sounds\Ouch!.wav" 
+         • Plays when the player takes damage.
+    - "H:\repos\Crafting Tools\assets\sounds\owwies!.wav" 
+         • Alternate hit sound; randomly played instead of the primary sound.
+    - "H:\repos\Crafting Tools\assets\sounds\shoot.wav"
+         • Plays when the player fires a projectile.
+         
+B. Victory & Game Over Sounds:
+------------------------------
+    - Victory Sounds:
+         • "H:\repos\Crafting Tools\assets\sounds\victory.wav" – Standard victory sound when a level is completed.
+         • "H:\repos\Crafting Tools\assets\sounds\victory1.wav" – Plays if the player finishes a level with 2 HP.
+         • "H:\repos\Crafting Tools\assets\sounds\victory2.wav" – Plays if the player finishes a level with 1 HP.
+    - Game Over Sounds:
+         • "H:\repos\Crafting Tools\assets\sounds\gameover.wav" – Primary game over sound.
+         • "H:\repos\Crafting Tools\assets\sounds\gameover1.wav" – Alternate game over sound (with a random chance to play).
+
+C. Projectile/Spell Sound Effects:
+----------------------------------
+    - Files (should be used sparingly for normal monsters, but always for bosses):
+         • "H:\repos\Crafting Tools\assets\sounds\spellfire.wav"
+         • "H:\repos\Crafting Tools\assets\sounds\spellfire1.mp3"
+         • "H:\repos\Crafting Tools\assets\sounds\spellfire2.mp3"
+         • "H:\repos\Crafting Tools\assets\sounds\spellfire3.mp3"
+    - Usage:
+         • For the player: these sounds should trigger randomly about every 2.5 to 4 seconds.
+         • For bosses: one of these sounds should always be played during their attack sequences.
+
+===============================================
+5. Activation & Flow
+===============================================
+
+- Activation:
+    • The game is launched when the "Expedition button" is clicked.
+- Flow:
+    • Upon activation, the game loads the map screen using the provided map thumbnail:
+         - File: "H:\repos\Crafting Tools\assets\images\darklings\lissomeplainsthumb.png"
+    • The level (Lissome Plains) is then initialized with all the layers and assets as defined above.
+    • Gameplay commences as outlined, including rounds, enemy waves, player actions, health management, and score-based rewards.
+
+===============================================
+End of Design Document
+===============================================

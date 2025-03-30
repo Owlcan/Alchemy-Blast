@@ -15,7 +15,7 @@ const ingredients = [
         description: 'A fragrant herb with a strong taste, perfect for cooking.',
         category: 'herb',
         color: '#7CB342',
-        image: 'assets/images/herbs/savour-herb.png'
+        image: 'assets/images/herbs/Savour Herb.png'
     },
     // Crystals
     {
