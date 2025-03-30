@@ -12,8 +12,9 @@
         <header>
             <h1>Crafting Tools</h1>
             <div class="nav-buttons">
-                <button id="compendium-btn" class="nav-btn">Compendium</button>
-                <button id="recipe-book-btn" class="nav-btn">Recipe Book</button>
+                <button id="compendium-btn" class="fancy-button">Compendium</button>
+                <button id="recipe-book-btn" class="fancy-button">Recipe Book</button>
+                <button id="expedition-btn" class="fancy-button">Expedition</button>
             </div>
         </header>
         
@@ -99,6 +100,87 @@
                 <div class="recipe-book-items"></div>
             </div>
         </div>
+        
+        <div id="expedition-modal" class="modal">
+            <div class="modal-content expedition-content">
+                <span class="close">&times;</span>
+                
+                <!-- Level Select Screen -->
+                <div id="expedition-level-select">
+                    <h2>Expeditions</h2>
+                    <div class="level-list">
+                        <div class="level-thumbnail">
+                            <img src="assets/images/darklings/lissomeplainsthumb.png" alt="Lissome Plains">
+                            <div class="level-info">
+                                <h3>Lissome Plains</h3>
+                                <p>A peaceful meadow overrun by mischievous darklings. Clear them out to gather rare ingredients.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Container -->
+                <div id="expedition-container"></div>
+            </div>
+        </div>
+
+        <style>
+            .expedition-content {
+                background-color: #333;
+                padding: 20px;
+                max-width: 850px;
+                width: 95%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                border: 4px solid #555;
+                border-radius: 8px;
+            }
+
+            .expedition-content h2 {
+                color: #fff;
+                text-align: center;
+                margin: 10px 0 20px 0;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            }
+
+            #expedition-container {
+                width: 800px;
+                height: 600px;
+                position: relative;
+                box-sizing: border-box;
+                background-color: #222;
+                border: 2px solid #555;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+
+            #expedition-container canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }
+        </style>
+
+        <!-- Load game components FIRST -->
+        <script src="assets/js/expedition/monster_logic.js"></script>
+        <script src="assets/js/expedition/expeditionapp.js"></script>
+        
+        <!-- Load data after game components -->
+        <script src="ingredients.js"></script>
+        <script src="recipes.js"></script>
+        
+        <!-- Then load the main application -->
+        <script src="app.js"></script>
+        
+        <!-- Load debug utilities last -->
+        <script src="debug.js"></script>
+        <!-- Remove duplicates -->
+        <!-- <script src="assets/js/debug.js"></script> -->
+        <!-- <script src="document.js"></script> -->
     </div>
     
     <!-- Audio elements -->
@@ -108,7 +190,28 @@
     <audio id="success-sound" src="assets/sounds/success.wav" preload="auto"></audio>
     <audio id="fail-sound" src="assets/sounds/fail.mp3" preload="auto"></audio>
     <audio id="slot-sound" src="assets/sounds/set.mp3" preload="auto"></audio>
-
+    
+    <!-- Expedition game audio -->
+    <audio id="shoot-sound" src="assets/sounds/shoot.wav" preload="auto"></audio>
+    <audio id="hit1-sound" src="assets/sounds/hit1.wav" preload="auto"></audio>
+    <audio id="hit2-sound" src="assets/sounds/hit2.wav" preload="auto"></audio>
+    <audio id="victory-sound" src="assets/sounds/victory.wav" preload="auto"></audio>
+    <audio id="victory1-sound" src="assets/sounds/victory1.wav" preload="auto"></audio>
+    <audio id="victory2-sound" src="assets/sounds/victory2.wav" preload="auto"></audio>
+    <audio id="gameover-sound" src="assets/sounds/gameover.wav" preload="auto"></audio>
+    <audio id="gameover1-sound" src="assets/sounds/gameover1.wav" preload="auto"></audio>
+    <audio id="spellfire-sound" src="assets/sounds/spellfire.wav" preload="auto"></audio>
+    <audio id="spellfire1-sound" src="assets/sounds/spellfire1.mp3" preload="auto"></audio>
+    <audio id="spellfire2-sound" src="assets/sounds/spellfire2.mp3" preload="auto"></audio>
+    <audio id="spellfire3-sound" src="assets/sounds/spellfire3.mp3" preload="auto"></audio>
+    
+    <!-- Aliza's audio elements -->
+    <audio id="aliza-hit1-sound" src="assets/sounds/alizahit1.wav" preload="auto"></audio>
+    <audio id="aliza-hit2-sound" src="assets/sounds/alizahit2.wav" preload="auto"></audio>
+    <audio id="aliza-victory1-sound" src="assets/sounds/alizavictory1.wav" preload="auto"></audio>
+    <audio id="aliza-victory2-sound" src="assets/sounds/alizavictory2.wav" preload="auto"></audio>
+    <audio id="aliza-gameover1-sound" src="assets/sounds/alizagameover1.wav" preload="auto"></audio>
+    <audio id="aliza-gameover2-sound" src="assets/sounds/alizagameover2.wav" preload="auto"></audio>
     <!-- Add a fallback script to handle missing audio files -->
     <script>
         function createSilentAudio(id) {
@@ -126,7 +229,19 @@
             'legendary-success-sound',
             'fail-sound',
             'slot-sound',
-            'slot-remove-sound'
+            'slot-remove-sound',
+            'shoot-sound',
+            'hit1-sound',
+            'hit2-sound',
+            'victory-sound',
+            'victory1-sound',
+            'victory2-sound',
+            'gameover-sound',
+            'gameover1-sound',
+            'spellfire-sound',
+            'spellfire1-sound',
+            'spellfire2-sound',
+            'spellfire3-sound'
         ];
         
         // Create any missing audio elements
@@ -291,19 +406,90 @@
             padding-bottom: 30px;
             min-height: 500px;
         }
+
+        .game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px;
+            color: white;
+            min-width: 300px;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .game-over-content img {
+            max-width: 200px;
+            margin-bottom: 10px;
+        }
+
+        .game-over-content h2 {
+            color: #ff4444;
+            font-size: 32px;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-over-content p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+
+        .game-over-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .game-over-buttons button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .game-over-buttons button:hover {
+            transform: scale(1.05);
+        }
+
+        .retry-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .retry-btn:hover {
+            background: #45a049;
+        }
+
+        .menu-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .menu-btn:hover {
+            background: #1e87dc;
+        }
+
+        .exit-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .exit-btn:hover {
+            background: #da190b;
+        }
     </style>
-    
-    <!-- Load data first -->
-    <script src="ingredients.js"></script>
-    <script src="recipes.js"></script>
-    
-    <!-- Then load the main application -->
-    <script src="app.js"></script>
-    
-    <!-- Load debug utilities last -->
-    <script src="debug.js"></script>
-    <!-- Remove duplicates -->
-    <!-- <script src="assets/js/debug.js"></script> -->
-    <!-- <script src="document.js"></script> -->
 </body>
 </html>

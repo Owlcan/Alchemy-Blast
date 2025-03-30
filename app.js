@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Make sure AlchemyBlaster is available before anything else
+    if (typeof AlchemyBlaster === 'undefined') {
+        console.error('AlchemyBlaster not found, creating interface');
+        window.AlchemyBlaster = class {
+            constructor() {
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.canvas.width = 640;
+                this.canvas.height = 800;
+            }
+        };
+    }
+
     // Initialize player inventory and storage first
     let playerInventory = {};
     let discoveredRecipes = {};
@@ -1727,8 +1740,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Error fallback
         img.onerror = function() {
+            console.warn(`Failed to load crafted item image: ${img.src}`);
             this.onerror = null;
-            this.src = 'assets/images/placeholder.png';
+            // Try with assets/images/ prefix if it's missing
+            if (!img.src.includes('assets/images/')) {
+                img.src = 'assets/images/' + item.image;
+            } else {
+                this.src = 'assets/images/placeholder.png';
+            }
         };
         
         // Item name
@@ -2067,5 +2086,88 @@ document.addEventListener('DOMContentLoaded', function() {
         container.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
+    });
+    
+    // Expedition handling
+    const expeditionBtn = document.getElementById('expedition-btn');
+    const expeditionModal = document.getElementById('expedition-modal');
+    let currentGame = null;
+
+    expeditionBtn.addEventListener('click', function() {
+        expeditionModal.style.display = 'block';
+        const container = document.getElementById('expedition-container');
+        container.style.display = 'none';
+
+        document.querySelector('.level-thumbnail').addEventListener('click', function() {
+            const container = document.getElementById('expedition-container');
+            container.style.display = 'block';
+            document.getElementById('expedition-level-select').style.display = 'none';
+
+            // Initialize game with audio elements
+            currentGame = new AlchemyBlaster({
+                container: container,
+                sounds: {
+                    shoot: document.getElementById('shoot-sound'),
+                    hit1: document.getElementById('hit1-sound'),
+                    hit2: document.getElementById('hit2-sound'),
+                    victory: document.getElementById('victory-sound'),
+                    victory1: document.getElementById('victory1-sound'),
+                    victory2: document.getElementById('victory2-sound'),
+                    gameOver: document.getElementById('gameover-sound'),
+                    gameOver1: document.getElementById('gameover1-sound'),
+                    spellfire: [
+                        document.getElementById('spellfire-sound'),
+                        document.getElementById('spellfire1-sound'),
+                        document.getElementById('spellfire2-sound'),
+                        document.getElementById('spellfire3-sound')
+                    ],
+                    alizaHit1: document.getElementById('aliza-hit1-sound'),
+                    alizaHit2: document.getElementById('aliza-hit2-sound'),
+                    alizaVictory1: document.getElementById('aliza-victory1-sound'),
+                    alizaVictory2: document.getElementById('aliza-victory2-sound'),
+                    alizaGameOver1: document.getElementById('aliza-gameover1-sound'),
+                    alizaGameOver2: document.getElementById('aliza-gameover2-sound')
+                },
+                onRewardsCollected: function(rewards) {
+                    // Add rewards to player inventory
+                    if (rewards && Array.isArray(rewards)) {
+                        rewards.forEach(reward => {
+                            if (reward.id && reward.amount) {
+                                playerInventory[reward.id] = (playerInventory[reward.id] || 0) + reward.amount;
+                            }
+                        });
+                        
+                        // Save updated inventory
+                        localStorage.setItem('playerInventory', JSON.stringify(playerInventory));
+                        
+                        // Reload ingredients drawer
+                        const activeCategory = document.querySelector('.category-btn.active').dataset.category;
+                        loadIngredients(activeCategory);
+                    }
+                }
+            });
+        });
+    });
+
+    // Close expedition modal
+    expeditionModal.querySelector('.close').addEventListener('click', function() {
+        expeditionModal.style.display = 'none';
+        if (currentGame) {
+            currentGame.gameState = 'menu';
+            document.getElementById('expedition-level-select').style.display = 'block';
+            document.getElementById('expedition-container').style.display = 'none';
+        }
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target === expeditionModal) {
+            expeditionModal.style.display = 'none';
+            if (currentGame) {
+                currentGame.gameState = 'menu';
+                document.getElementById('expedition-level-select').style.display = 'block';
+                document.getElementById('expedition-container').style.display = 'none';
+            }
+        }
     });
 });
