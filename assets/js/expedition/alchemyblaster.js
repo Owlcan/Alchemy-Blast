@@ -1768,7 +1768,8 @@ class Enemy {
         this.fadeAlpha = 1;        
         this.shieldActive = false;
         this.shieldCooldown= 0;
-        this.lastTeleport = 0        this.spawnTime = Date.now();
+        this.lastTeleport = 0        
+        this.spawnTime = Date.now();
         this.isInvulnerable = false;
         this.isCharging = false;
         // Check if sprite is available and log result

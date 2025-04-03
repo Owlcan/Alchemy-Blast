@@ -2088,10 +2088,10 @@ currentRound: 1,
                 }
             }
             
-            // Remove projectiles that are off-screen
-            if (projectile.y < -100 || projectile.y > 1060 || 
-                projectile.x < -100 || projectile.x > 900) {
-                this.projectiles.player.splice(i, 1);
+                    // Remove projectiles that are off-screen
+                    if (projectile.y < -2000 || projectile.y > 2000 || 
+                        projectile.x < -1000 || projectile.x > 1000) {
+                        this.projectiles.player.splice(i, 1);
             }
         }
         
