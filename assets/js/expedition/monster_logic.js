@@ -1,11 +1,6 @@
 /**
- * Monster Logic - Alchemy Blaster
- * 
- * This file contains all the monster logic for the Alchemy Blaster mini-game.
- * It centralizes the behavior for all regular monsters and boss monsters
- * in a Space Invaders-style system with finite waves.
+ * Monster Logic Module for Alchemy Blaster
  */
-
 class MonsterLogic {
     constructor(game) {
         this.game = game;
@@ -31,6 +26,22 @@ class MonsterLogic {
                     'assets/images/darklings/alizashot3.png'  // Between shot2 and shot1 in size 
                 ],
                 gameover: 'assets/images/darklings/alizagameover.png'
+            },
+            shinshi: {
+                select: 'assets/images/darklings/shincharacterselect.png',
+                left: 'assets/images/darklings/shinleft.png',
+                right: 'assets/images/darklings/shinright.png',
+                shots: [
+                    'assets/images/darklings/shinbeam1.png',
+                    'assets/images/darklings/shinbeam2.png',
+                    'assets/images/darklings/shinbeam3.png'
+                ],
+                gameover: 'assets/images/darklings/shingameover.png',
+                victory: 'assets/images/darklings/shinvictory.png',
+                special: [
+                    'assets/images/darklings/shinspecialbeamleftside.png',
+                    'assets/images/darklings/shinspecialbeamrightside.png'
+                ]
             }
         };
         
@@ -101,6 +112,65 @@ class MonsterLogic {
                     speed: 'fast',
                     style: 'horizontal'
                 }
+            },
+            shinshi: {
+                // Simple health system with 4 HP
+                health: {
+                    type: 'basic',
+                    maxHealth: 4,
+                    // No overlay HP bar as per design document
+                    hasOverlay: false
+                },
+                // Beam attack configuration
+                firing: {
+                    type: 'beam',
+                    beamStayTime: 'continuous', // Beam stays on as long as fire button is held
+                    chargeLevels: 3,  // 3 levels of charge
+                    beams: {
+                        // Level 1: Small beam with thin hitbox
+                        1: { 
+                            damage: 1,
+                            width: 20,
+                            sprite: 'shinbeam1'
+                        },
+                        // Level 2: Medium beam with wider hitbox
+                        2: { 
+                            damage: 1,
+                            width: 40,
+                            sprite: 'shinbeam2'
+                        },
+                        // Level 3: Large beam with even wider hitbox
+                        3: { 
+                            damage: 2,
+                            width: 60,
+                            sprite: 'shinbeam3'
+                        }
+                    },
+                    // Beam stretches vertically from hand to top of screen
+                    beamDirection: 'vertical',
+                    special: {
+                        type: 'horizontal-beams',
+                        damage: 10,
+                        count: 5,  // Creates 5 horizontal beams
+                        cooldown: 10000, // 10 second cooldown
+                        sprites: [
+                            'shinspecialbeamleftside',
+                            'shinspecialbeamrightside'
+                        ],
+                        name: 'Full Screen Beam'
+                    }
+                },
+                movement: {
+                    // Slower than Dere or Aliza
+                    speed: 'slow',
+                    style: 'horizontal'
+                },
+                sounds: {
+                    attack: ['shinnyzap1', 'shinnyzap2'], // Two sounds alternating to create electrical effect
+                    hit: 'shinnyhit1',
+                    special: 'shinnypewpewpew',
+                    victory: ['shinnyvictory1', 'shinnyvictory2'] // Two victory sounds with chance to play either
+                }
             }
         };
         
@@ -117,7 +187,7 @@ class MonsterLogic {
             maxEnemies: 15,     // Increased from 6 to 15
             enemyTypes: ['darkling2', 'darkling3', 'darkling4'], // Basic enemy types for flybys
             possibleHeights: [60, 80, 100, 120, 140, 160, 180, 200], // Added more height options
-            speed: -0.1,         // Reduced from 0.005 to make flybys much slower
+            speed: 0.0001,       // Changed from 0.1 to 0.001 for much slower movement
             spacing: 30         // Reduced from 40 to create tighter groups
         };
     }
@@ -136,7 +206,7 @@ class MonsterLogic {
                         formation: 'spiral',
                         enemies: Array(16).fill('darkling1'),
                         spacing: { x: 35, y: 35 }, // Reduced spacing to accommodate more enemies
-                        startPosition: { x: 125, y: 80 },
+                        startPosition: { x: 0, y: -200 }, // Maintain original position
                         movementPattern: 'rotate'
                     },
                     {
@@ -145,7 +215,7 @@ class MonsterLogic {
                         enemies: Array(20).fill().map((_, i) => 
                             i % 3 === 0 ? 'darkling2' : 'darkling1'),
                         spacing: { x: 25, y: 18 }, // Reduced spacing
-                        startPosition: { x: 125, y: 60 },
+                        startPosition: { x: 0, y: -150 }, // Original position
                         movementPattern: 'pulse'
                     },
                     {
@@ -155,7 +225,7 @@ class MonsterLogic {
                         enemies: Array(24).fill().map((_, i) => 
                             i < 8 ? 'darkling3' : 'darkling2'),
                         spacing: { radius: [80, 140, 200] }, // Added a third ring
-                        startPosition: { x: 125, y: 120 },
+                        startPosition: { x: 0, y: -300 }, // Moved up by 400 from original 100
                         movementPattern: 'converge'
                     },
                     {
@@ -166,13 +236,13 @@ class MonsterLogic {
                                 type: 'arc',
                                 enemies: Array(10).fill('darkling1'), // Increased from 5
                                 spacing: { radius: 200, arc: 180 },
-                                position: { x: 0, y: -40 }
+                                position: { x: 0, y: -250 } // Moved up by 290 from original 40
                             },
                             {
                                 type: 'arc',
                                 enemies: Array(10).fill('darkling1'), // Increased from 5
                                 spacing: { radius: 200, arc: 180 },
-                                position: { x: 0, y: 40 }
+                                position: { x: 0, y: -170 } // Moved up by 290 from original 120
                             }
                         ],
                         movementPattern: 'swoop'
@@ -180,7 +250,7 @@ class MonsterLogic {
                     {
                         // Wave 5: Boss wave with circling minions - Increased minion counts
                         formation: 'boss-with-satellites',
-                        boss: { type: 'darklingboss1', position: { x: 0, y: 100 } },
+                        boss: { type: 'darklingboss1', position: { x: 0, y: -200 } }, // Moved up by 300 from original 100
                         minions: [
                             { type: 'darkling2', count: 12, orbit: { radius: 120, speed: 0.002 } }, // Doubled from 6
                             { type: 'darkling1', count: 10, orbit: { radius: 200, speed: -0.001 } }, // More than doubled from 4
@@ -199,7 +269,7 @@ class MonsterLogic {
                         enemies: Array(25).fill().map((_, i) => 
                             ['darkling1', 'darkling2', 'darkling3'][i % 3]),
                         spacing: { outer: 170, inner: 100 }, // Increased spacing to accommodate more enemies
-                        startPosition: { x: 0, y: 0 },
+                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 450)
                         movementPattern: 'star-pulse'
                     },
                     {
@@ -208,7 +278,7 @@ class MonsterLogic {
                         enemies: Array(25).fill().map((_, i) => 
                             ['darkling5', 'darkling6', 'darkling4'][i % 3]),
                         spacing: { outer: 170, inner: 100 }, // Increased spacing
-                        startPosition: { x: 0, y: 0 },
+                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 450)
                         movementPattern: 'star-pulse'
                     },
                     {
@@ -223,7 +293,7 @@ class MonsterLogic {
                                    row === 3 ? 'darkling3' : 'darkling2';
                         }),
                         spacing: { x: 65, y: 40 }, // Reduced spacing slightly
-                        startPosition: { x: 0, y: -20 }, // Start higher
+                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 430)
                         waveFactor: { amplitude: 60, frequency: 0.1 },
                         movementPattern: 'wave-attack'
                     },
@@ -233,7 +303,7 @@ class MonsterLogic {
                         enemies: Array(35).fill().map((_, i) => 
                             ['darkling5', 'darkling6', 'darkling4','darkling1','darkling2','darkling3' ][i % 6]),
                         spacing: { outer: 200, inner: 100 }, // Increased spacing
-                        startPosition: { x: 0, y: 100 },
+                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 450)
                         movementPattern: 'star-pulse'
                     },
                     {
@@ -256,7 +326,7 @@ class MonsterLogic {
                                 rotationSpeed: 0.0005
                             }
                         ],
-                        startPosition: { x: 0, y: 120 },
+                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 470)
                         movementPattern: 'pulsating'
                     },
                     {
@@ -267,7 +337,7 @@ class MonsterLogic {
                                 formation: 'arc',
                                 enemies: Array(10).fill('darkling8'), // Doubled from 5
                                 spacing: { radius: 120, arc: 120 },
-                                startPosition: { x: 0, y: -40 },
+                                startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 410)
                                 delay: 0
                             },
                             {
@@ -275,14 +345,14 @@ class MonsterLogic {
                                 enemies: Array(30).fill().map((_, i) => // Doubled from 15
                                 ['darkling1', 'darkling2', 'darkling3'][i % 3]),
                                 spacing: { outer: 170, inner: 100 }, // Increased spacing
-                                startPosition: { x: 0, y: 0 },
+                                startPosition: { x: 0, y: -225 }, // Adjusted Y position (-225 from previous 450)
                                 movementPattern: 'star-pulse'
                             },
                             {
                                 formation: 'arc',
                                 enemies: Array(10).fill('darkling8'), // Doubled from 5
                                 spacing: { radius: 120, arc: 120 },
-                                startPosition: { x: 0, y: 40 },
+                                startPosition: { x: 0, y: -250 }, // Adjusted Y position (-225 from previous 490)
                                 delay: 0
                             }
                         ],
@@ -293,18 +363,18 @@ class MonsterLogic {
                         formation: 'round2-boss',
                         boss: { 
                             type: 'darklingboss2', 
-                            position: { x: 0, y: 120 },
+                            position: { x: 0, y: 245 }, // Adjusted Y position (-225 from previous 470)
                             health: 150, // Increased health for more challenging battle
                             hasShield: true, // New shield mechanic
                             phase: 1, // Boss starts in phase 1
                             phaseThresholds: [0.7, 0.4] // Transition at 70% and 40% health
                         },
                         guardians: [
-                            // Four fixed guardian positions around the boss
-                            { type: 'darkling7', position: { x: -100, y: 80 } },
-                            { type: 'darkling7', position: { x: 100, y: 80 } },
-                            { type: 'darkling7', position: { x: -100, y: 160 } },
-                            { type: 'darkling7', position: { x: 100, y: 160 } }
+                            // Four fixed guardian positions symmetrically around the boss
+                            { type: 'darkling7', position: { x: -100, y: 195 } }, // Adjusted Y position (-225 from previous 420)
+                            { type: 'darkling7', position: { x: 100, y: 195 } },  // Adjusted Y position (-225 from previous 420)
+                            { type: 'darkling7', position: { x: -100, y: 295 } }, // Adjusted Y position (-225 from previous 520)
+                            { type: 'darkling7', position: { x: 100, y: 295 } }   // Adjusted Y position (-225 from previous 520)
                         ],
                         minions: [
                             // Orbiting minions - first wave
@@ -327,7 +397,7 @@ class MonsterLogic {
                         enemies: Array(40).fill().map((_, i) => 
                             i % 2 === 0 ? 'darkling8' : 'darkling7'),
                         spacing: { angle: 12, radiusStep: 12 }, // Reduced spacing to fit more enemies
-                        startPosition: { x: 0, y: -50 },
+                        startPosition: { x: 0, y: 225 }, // Adjusted Y position (-225 from previous 450)
                         growFactor: 0.3,
                         movementPattern: 'spiral-expand'
                     },
@@ -337,11 +407,11 @@ class MonsterLogic {
                         seed: {
                             enemies: ['darkling10', 'darkling10', 'darkling10', 'darkling10', 'darkling10'], // Added 2 more seed enemies
                             positions: [
-                                { x: -150, y: 80 },
-                                { x: -75, y: 40 },
-                                { x: 0, y: 20 },
-                                { x: 75, y: 40 },
-                                { x: 150, y: 80 }
+                                { x: -150, y: 205 }, // Adjusted Y position (-225 from previous 430)
+                                { x: -75, y: 195 },  // Adjusted Y position (-225 from previous 390)
+                                { x: 0, y: 185 },    // Adjusted Y position (-225 from previous 370)
+                                { x: 75, y: 195 },   // Adjusted Y position (-225 from previous 390)
+                                { x: 150, y: 205 }   // Adjusted Y position (-225 from previous 430)
                             ]
                         },
                         children: {
@@ -359,25 +429,25 @@ class MonsterLogic {
                                 enemies: Array(18).fill('darkling10'), // Tripled from 6
                                 radius: 100,
                                 rotationSpeed: 0.001,
-                                center: { x: -60, y: 100 }
+                                center: { x: -60, y: 225 } // Adjusted Y position (-225 from previous 450)
                             },
                             {
                                 enemies: Array(18).fill('darkling10'), // Tripled from 6
                                 radius: 100,
                                 rotationSpeed: -0.001,
-                                center: { x: 60, y: 100 }
+                                center: { x: 60, y: 225 } // Adjusted Y position (-225 from previous 450)
                             },
                             {
                                 enemies: Array(12).fill('darkling7'), // Quadrupled from 3
                                 radius: 40,
                                 rotationSpeed: 0.002,
-                                center: { x: 0, y: 100 }
+                                center: { x: 0, y: 225 } // Adjusted Y position (-225 from previous 450)
                             },
                             { // Added a fourth ring
                                 enemies: Array(24).fill('darkling8'),
                                 radius: 150,
                                 rotationSpeed: 0.0015,
-                                center: { x: 0, y: 100 }
+                                center: { x: 0, y: 225 } // Adjusted Y position (-225 from previous 450)
                             }
                         ],
                         movementPattern: 'cosmic-dance'
@@ -388,16 +458,16 @@ class MonsterLogic {
                         core: {
                             enemies: Array(10).fill('darkling7'), // Doubled from 5
                             positions: [
-                                { x: 0, y: 80 },
-                                { x: -60, y: 120 },
+                                { x: 0, y: 100 }, // Center of formation
+                                { x: -60, y: 120 }, // Symmetrically positioned
                                 { x: 60, y: 120 },
-                                { x: -120, y: 160 },
-                                { x: 120, y: 160 },
-                                { x: -40, y: 100 },
-                                { x: 40, y: 100 },
+                                { x: -120, y: 140 },
+                                { x: 120, y: 140 },
+                                { x: -40, y: 80 },
+                                { x: 40, y: 80 },
                                 { x: -80, y: 140 },
                                 { x: 80, y: 140 },
-                                { x: 0, y: 140 }
+                                { x: 0, y: 160 }
                             ]
                         },
                         turrets: [
@@ -411,7 +481,7 @@ class MonsterLogic {
                             enemies: Array(18).fill('darkling10'), // Tripled from 6
                             paths: [
                                 { points: [{ x: -140, y: 40 }, { x: 140, y: 40 }], speed: 0.5 },
-                                { points: [{ x: -100, y: 200 }, { x: 100, y: 200 }], speed: 0.3 },
+                                { points: [{ x: -100, y: 180 }, { x: 100, y: 180 }], speed: 0.3 },
                                 { points: [{ x: -120, y: 120 }, { x: 120, y: 120 }], speed: 0.4 } // Added third patrol path
                             ]
                         },
@@ -426,14 +496,14 @@ class MonsterLogic {
                                     Math.random() < 0.7 ? 'darkling8' : 'darkling10'),
                                 radius: 180,
                                 density: 0.7,
-                                center: { x: 0, y: 120 }
+                                center: { x: 0, y: 120 } // Centered with slight vertical offset
                             },
                             { // Added a second cluster
                                 enemies: Array(20).fill().map(() =>
                                     Math.random() < 0.4 ? 'darkling7' : 'darkling10'),
                                 radius: 100,
                                 density: 0.6,
-                                center: { x: 0, y: 60 }
+                                center: { x: 0, y: 60 } // Centered with slight vertical offset
                             }
                         ],
                         pulseRate: { min: 0.7, max: 1.3, speed: 0.0005 },
@@ -447,21 +517,21 @@ class MonsterLogic {
                                 formation: 'pentagon',
                                 enemies: Array(30).fill('darkling8'), // Tripled from 10
                                 radius: 150, // Increased radius to fit more enemies
-                                position: { x: 100, y: 100 },
+                                position: { x: 0, y: 100 }, // Centered on screen
                                 duration: 6000
                             },
                             {
                                 formation: 'star',
                                 enemies: Array(30).fill('darkling10'), // Tripled from 10
                                 radius: { inner: 100, outer: 200 }, // Increased radius
-                                position: { x: 0, y: 0 },
+                                position: { x: 0, y: 100 }, // Centered on screen
                                 duration: 6000
                             },
                             {
                                 formation: 'circle',
                                 enemies: Array(30).fill('darkling7'), // Tripled from 10
                                 radius: 170, // Increased radius
-                                position: { x: -100, y: 0 },
+                                position: { x: 0, y: 100 }, // Centered on screen
                                 duration: 6000
                             }
                         ],
@@ -475,14 +545,14 @@ class MonsterLogic {
                             {
                                 enemies: Array(16).fill().map((_, i) => // Doubled from 8
                                     i % 2 === 0 ? 'darkling10' : 'darkling8'),
-                                center: { x: -100, y: 120 },
+                                center: { x: -100, y: 100 }, // Symmetrical position
                                 radius: { start: 30, end: 120 },
                                 spiral: { turns: 1.5, direction: 1 }
                             },
                             {
                                 enemies: Array(16).fill().map((_, i) => // Doubled from 8
                                     i % 2 === 0 ? 'darkling10' : 'darkling8'),
-                                center: { x: 100, y: 120 },
+                                center: { x: 100, y: 100 }, // Symmetrical position
                                 radius: { start: 30, end: 120 },
                                 spiral: { turns: 1.5, direction: -1 }
                             }
@@ -496,19 +566,19 @@ class MonsterLogic {
                     {
                         // Wave 8: Final boss with phased dynamic defenses - Tripled minion counts
                         formation: 'final-bastion',
-                        boss: { type: 'darklingboss3', position: { x: 0, y: 140 } },
+                        boss: { type: 'darklingboss3', position: { x: 0, y: 120 } }, // Centered boss
                         phases: [
                             {
                                 // Phase 1: Shielding formation - Tripled enemy count
                                 formation: 'shield-wall',
                                 enemies: Array(18).fill('darkling10'), // Tripled from 6
                                 positions: [
-                                    { x: -120, y: 90 }, { x: -80, y: 80 }, { x: -40, y: 70 }, 
-                                    { x: 0, y: 60 }, { x: 40, y: 70 }, { x: 80, y: 80 },
-                                    { x: 120, y: 90 }, { x: -100, y: 120 }, { x: -50, y: 110 },
-                                    { x: 0, y: 100 }, { x: 50, y: 110 }, { x: 100, y: 120 },
-                                    { x: -60, y: 150 }, { x: -20, y: 140 }, { x: 20, y: 140 },
-                                    { x: 60, y: 150 }, { x: 0, y: 180 }, { x: 0, y: 200 }
+                                    { x: -120, y: 70 }, { x: -80, y: 60 }, { x: -40, y: 50 }, 
+                                    { x: 0, y: 40 }, { x: 40, y: 50 }, { x: 80, y: 60 },
+                                    { x: 120, y: 70 }, { x: -100, y: 100 }, { x: -50, y: 90 },
+                                    { x: 0, y: 80 }, { x: 50, y: 90 }, { x: 100, y: 100 },
+                                    { x: -60, y: 130 }, { x: -20, y: 120 }, { x: 20, y: 120 },
+                                    { x: 60, y: 130 }, { x: 0, y: 160 }, { x: 0, y: 180 }
                                 ],
                                 duration: 20000
                             },
@@ -520,19 +590,19 @@ class MonsterLogic {
                                         enemies: Array(9).fill('darkling7'), // Tripled from 3
                                         formation: 'triangle',
                                         radius: 90, // Increased radius
-                                        center: { x: -120, y: 120 }
+                                        center: { x: -120, y: 100 } // Symmetrical position
                                     },
                                     {
                                         enemies: Array(9).fill('darkling7'), // Tripled from 3
                                         formation: 'triangle',
                                         radius: 90, // Increased radius
-                                        center: { x: 120, y: 120 }
+                                        center: { x: 120, y: 100 } // Symmetrical position
                                     },
                                     { // Added a third squad
                                         enemies: Array(12).fill('darkling8'),
                                         formation: 'diamond',
                                         radius: 100,
-                                        center: { x: 0, y: 80 }
+                                        center: { x: 0, y: 60 } // Centered with vertical offset
                                     }
                                 ],
                                 duration: 15000
@@ -543,7 +613,7 @@ class MonsterLogic {
                                 enemies: Array(36).fill().map(() => // Tripled from 12
                                     Math.random() < 0.5 ? 'darkling8' : 'darkling10'),
                                 pattern: 'chaos',
-                                boundary: { x: [-220, 220], y: [60, 220] }, // Increased boundary
+                                boundary: { x: [-200, 200], y: [60, 180] }, // Centered boundary
                                 duration: 25000
                             }
                         ],
@@ -645,6 +715,248 @@ class MonsterLogic {
     }
 
     /**
+     * Create projectiles for an enemy
+     * @param {string} type - Enemy type
+     * @param {number} x - Enemy x position
+     * @param {number} y - Enemy y position
+     * @param {Object} playerPosition - Player position {x, y}
+     * @returns {Array} Array of projectile objects
+     */
+    createProjectiles(type, x, y, playerPosition) {
+        const projectiles = [];
+        
+        // No projectiles if player position is not available for targeted shots
+        if (!playerPosition) {
+            playerPosition = { x: x, y: y + 300 }; // Default target below the enemy
+        }
+        
+        // Calculate angle to player for aimed shots
+        const dx = playerPosition.x - x;
+        const dy = playerPosition.y - y;
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        // Base projectile speed (can be modified per enemy type)
+        const baseSpeed = 3;
+        
+        // Boss specific logic first
+        if (type.includes('boss')) {
+            if (type === 'darklingboss1') {
+                // Triple spread shot for first boss
+                for (let i = -1; i <= 1; i++) {
+                    const spreadAngle = angle + (i * Math.PI / 10);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(spreadAngle) * baseSpeed,
+                        dy: Math.sin(spreadAngle) * baseSpeed,
+                        width: 40,
+                        height: 40,
+                        damage: 1,
+                        sprite: 'bossShot1'
+                    });
+                }
+            } 
+            else if (type === 'darklingboss2') {
+                // Circle shot pattern for second boss (8 projectiles in all directions)
+                for (let i = 0; i < 8; i++) {
+                    const wideAngle = (i * Math.PI / 4);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(wideAngle) * baseSpeed * 0.8,
+                        dy: Math.sin(wideAngle) * baseSpeed * 0.8,
+                        width: 30,
+                        height: 30,
+                        damage: 1,
+                        sprite: 'bossShot1'
+                    });
+                }
+            } 
+            else if (type === 'darklingboss3') {
+                // Queen (final boss) - Attack pattern varies based on a random roll
+                const patternType = Math.random();
+                
+                if (patternType < 0.33) {
+                    // Pattern 1: Dense wave pattern - more projectiles with narrower spread
+                    for (let i = -5; i <= 5; i++) {
+                        const shotAngle = angle + (i * Math.PI/18); // Narrower spread (10 degrees)
+                        projectiles.push({
+                            x: x,
+                            y: y,
+                            dx: Math.cos(shotAngle) * baseSpeed * 1.2,
+                            dy: Math.sin(shotAngle) * baseSpeed * 1.2,
+                            width: 40,
+                            height: 40,
+                            damage: 1,
+                            sprite: 'bossShot3'
+                        });
+                    }
+                }
+                else if (patternType < 0.66) {
+                    // Pattern 2: Spiral pattern - fewer projectiles with higher speed
+                    const spiralCount = 8; 
+                    const spiralSpacing = 2 * Math.PI / spiralCount;
+                    
+                    for (let i = 0; i < spiralCount; i++) {
+                        const spiralAngle = i * spiralSpacing;
+                        projectiles.push({
+                            x: x,
+                            y: y,
+                            dx: Math.cos(spiralAngle) * baseSpeed * 1.5,
+                            dy: Math.sin(spiralAngle) * baseSpeed * 1.5,
+                            width: 35,
+                            height: 35,
+                            damage: 1,
+                            sprite: 'bossShot2'
+                        });
+                    }
+                }
+                else {
+                    // Pattern 3: Targeted attack - precise shots aimed at player with higher damage
+                    // Main shot directly at player with high speed
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(angle * Math.PI/180) * baseSpeed * 2.0,
+                        dy: Math.sin(angle * Math.PI/180) * baseSpeed * 2.0,
+                        width: 50,
+                        height: 50,
+                        damage: 2,
+                        sprite: 'bossShot3'
+                    });
+                    
+                    // Two flanking shots with slight angle offset
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos((angle - 15) * Math.PI/180) * baseSpeed * 1.8,
+                        dy: Math.sin((angle - 15) * Math.PI/180) * baseSpeed * 1.8,
+                        width: 40,
+                        height: 40,
+                        damage: 1,
+                        sprite: 'bossShot2'
+                    });
+                    
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos((angle + 15) * Math.PI/180) * baseSpeed * 1.8,
+                        dy: Math.sin((angle + 15) * Math.PI/180) * baseSpeed * 1.8,
+                        width: 40,
+                        height: 40,
+                        damage: 1,
+                        sprite: 'bossShot2'
+                    });
+                }
+                
+                // Add a direct aimed shot with higher speed
+                projectiles.push({
+                    x: x,
+                    y: y,
+                    dx: Math.cos(angle * Math.PI/180) * baseSpeed * 1.7,
+                    dy: Math.sin(angle * Math.PI/180) * baseSpeed * 1.7,
+                    width: 50,
+                    height: 50,
+                    damage: 1,
+                    sprite: 'bossShot1'
+                });
+            }
+        } 
+        else {
+            // Regular enemy patterns
+            if (type === 'darkling1' || type === 'darkling2') {
+                // Basic enemies - single direct shot
+                projectiles.push({
+                    x: x,
+                    y: y,
+                    dx: Math.cos(angle * Math.PI/180) * baseSpeed,
+                    dy: Math.sin(angle * Math.PI/180) * baseSpeed,
+                    width: 20,
+                    height: 20,
+                    damage: 1,
+                    sprite: 'shot1'
+                });
+            } 
+            else if (type === 'darkling3' || type === 'darkling4') {
+                // Intermediate enemies - double shot spread
+                const spreadAngle = Math.PI / 15; // Narrow spread
+                
+                projectiles.push({
+                    x: x,
+                    y: y,
+                    dx: Math.cos(angle * Math.PI/180 - spreadAngle) * baseSpeed,
+                    dy: Math.sin(angle * Math.PI/180 - spreadAngle) * baseSpeed,
+                    width: 25,
+                    height: 25,
+                    damage: 1,
+                    sprite: 'shot1'
+                });
+                
+                projectiles.push({
+                    x: x,
+                    y: y,
+                    dx: Math.cos(angle * Math.PI/180 + spreadAngle) * baseSpeed,
+                    dy: Math.sin(angle * Math.PI/180 + spreadAngle) * baseSpeed,
+                    width: 25,
+                    height: 25,
+                    damage: 1,
+                    sprite: 'shot1'
+                });
+            } 
+            else if (type === 'darkling5' || type === 'darkling6') {
+                // Advanced enemies - triple shot
+                for (let i = -1; i <= 1; i++) {
+                    const spreadAngle = angle * Math.PI/180 + (i * Math.PI / 12);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(spreadAngle) * baseSpeed,
+                        dy: Math.sin(spreadAngle) * baseSpeed,
+                        width: 25,
+                        height: 25,
+                        damage: 1,
+                        sprite: 'shot1'
+                    });
+                }
+            } 
+            else if (type === 'darkling7' || type === 'darkling8' || type === 'darkling10') {
+                // Elite enemies - quad shot in wider spread
+                for (let i = -1.5; i <= 1.5; i++) {
+                    const spreadAngle = angle * Math.PI/180 + (i * Math.PI / 8);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(spreadAngle) * baseSpeed,
+                        dy: Math.sin(spreadAngle) * baseSpeed,
+                        width: 30,
+                        height: 30,
+                        damage: 1,
+                        sprite: 'shot1'
+                    });
+                }
+            } 
+            else if (type === 'darkling9') {
+                // Special enemy - arc shot (5 projectiles)
+                for (let i = -2; i <= 2; i++) {
+                    const spreadAngle = angle * Math.PI/180 + (i * Math.PI / 10);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(spreadAngle) * baseSpeed,
+                        dy: Math.sin(spreadAngle) * baseSpeed,
+                        width: 20,
+                        height: 20,
+                        damage: 1,
+                        sprite: 'shot1'
+                    });
+                }
+            }
+        }
+        
+        return projectiles;
+    }
+
+    /**
      * Get shot cooldown for an enemy based on its type
      * @param {string} type - The type of enemy
      * @param {number} health - Current health of the enemy
@@ -654,21 +966,26 @@ class MonsterLogic {
         const cooldownMap = {
             'darklingboss1': 2400, // Reduced from 3000
             'darklingboss2': 1500, // Reduced from 2000
-            'darklingboss3': 2000, // Final boss unchanged
+            'darklingboss3': 1200, // Final boss - reduced from 2000 to make more aggressive
             'darklingboss4': 3000, // Reduced from 3500
-            'darkling1': Infinity, // These enemies don't shoot
+            'darkling1': 3000,     // Now these enemies also shoot
             'darkling2': 3000,
             'darkling3': 2500,
             'darkling4': 2000,
             'darkling5': 1500,
-            'darkling6': 2000,
-            'darkling7': 1500,
-            'darkling8': 1000,
-            'darkling9': Infinity,
-            'darkling10': 1500
+            'darkling6': 2000,  // Previously 4000
+            'darkling7': 1800,  // Previously 3000
+            'darkling8': 1800,  // Previously 3000
+            'darkling9': 2500,  // Previously didn't fire
+            'darkling10': 2000  // Previously 3000
         };
         
-        return cooldownMap[type] || 4000;
+        // If enemy is a boss with low health, reduce cooldown even further (more aggressive at low health)
+        if (type === 'darklingboss3' && health < 20) {
+            return 1000; // Even more aggressive when at low health
+        }
+        
+        return cooldownMap[type] || 3000;  // Default reduced from 4000
     }
 
     /**
@@ -992,7 +1309,7 @@ class MonsterLogic {
                 
                 return {
                     x: Math.sin(rotation) * 100 * pulse,
-                    y: 100 + Math.cos(rotation) * 40 * pulse
+                        y: 100 + Math.cos(rotation) * 40 * pulse
                 };
             },
             
@@ -1056,7 +1373,7 @@ class MonsterLogic {
             
             'pulsating': t => {
                 // Concentric circles that rotate at different speeds and pulse
-                const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
+const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 const yOffset = 100 + Math.sin(t * 0.0003) * 30;
                 
                 return {
@@ -1350,6 +1667,34 @@ class MonsterLogic {
             const dx = Math.cos(rad) * speed;
             const dy = Math.sin(rad) * speed;
             
+            // Select appropriate sprite based on enemy type and speed
+            let sprite;
+            let shouldRotate = false;
+            
+            // For bosses or high-level enemies, use the rotating projectile
+            if (type.includes('boss') || ['darkling7', 'darkling8', 'darkling10'].includes(type)) {
+                sprite = 'darklingshot7';
+                shouldRotate = true;
+            }
+            // For faster projectiles
+            else if (speed > 4) {
+                sprite = 'darklingshot5';
+            }
+            // For more advanced enemies
+            else if (['darkling4', 'darkling5', 'darkling6'].includes(type)) {
+                sprite = Math.random() < 0.5 ? 'darklingshot4' : 'darklingshot3';
+            }
+            // For basic enemies
+            else {
+                sprite = Math.random() < 0.5 ? 'darklingshot1' : 'darklingshot2';
+            }
+            
+            // Special case for special attacks
+            if (type === 'darklingboss3' || (type === 'darklingboss2' && Math.random() < 0.3)) {
+                sprite = 'darklingshotspecial';
+                shouldRotate= true;
+            }
+            
             return {
                 x: x,
                 y: y,
@@ -1357,7 +1702,10 @@ class MonsterLogic {
                 dy: dy,
                 width: 30 * size,
                 height: 30 * size,
-                sprite: Math.random() < 0.5 ? 'darklingshot1' : 'darklingshot2' // Use the correct enemy projectile sprites
+                sprite: sprite,
+                rotate: shouldRotate,
+                rotationSpeed: shouldRotate ? (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                rotation: 0
             };
         };
         
@@ -1373,6 +1721,21 @@ class MonsterLogic {
             const ndx = (dx / dist) * speed;
             const ndy = (dy / dist) * speed;
             
+            // Select appropriate sprite for targeted shots
+            let sprite;
+            let shouldRotate = false;
+            
+            if (type.includes('boss')) {
+                sprite = 'darklingshot7';
+                shouldRotate = true;
+            } else if (type === 'darkling10' || type === 'darkling8') {
+                sprite = 'darklingshot4';
+            } else if (type === 'darkling7') {
+                sprite = 'darklingshot6';
+            } else {
+                sprite = 'darklingshot3';
+            }
+            
             return {
                 x: x,
                 y: y,
@@ -1380,7 +1743,10 @@ class MonsterLogic {
                 dy: ndy,
                 width: 30 * size,
                 height: 30 * size,
-                sprite: 'darklingshot2' // Use the second variant for targeted shots
+                sprite: sprite,
+                rotate: shouldRotate,
+                rotationSpeed: shouldRotate ? (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                rotation:0
             };
         };
         
@@ -1447,7 +1813,7 @@ class MonsterLogic {
                 break;
                 
             case 'darklingboss1':
-                // First boss: multiple shots in a V pattern
+                               // First boss: multiple shots in a V pattern
                 for (let angle = 75; angle <= 105; angle += 7.5) {
                     projectiles.push(createProjectile(angle, 4, 1.2));
                 }
@@ -1474,7 +1840,7 @@ class MonsterLogic {
         
         return projectiles;
     }
-    
+
     /**
      * Check if it's time to spawn a new flyby group
      * @param {number} timestamp - Current game timestamp
@@ -1504,7 +1870,7 @@ class MonsterLogic {
             this.flybySystem.minEnemies
         );
         
-        // Select a random height from the possible heights
+        // Select arandom height from the possible heights
         const yPos = this.flybySystem.possibleHeights[
             Math.floor(Math.random() * this.flybySystem.possibleHeights.length)
         ];
@@ -1540,22 +1906,23 @@ class MonsterLogic {
             enemies.push(enemy);
         }
         
-        return enemies;
+        return enemies; // Return the created enemies array
     }
     
     /**
      * Update flyby enemy positions
      * @param {Array} flybyEnemies - Array of flyby enemies
-     * @param {number} deltaTime - Time since last update in ms
-     * @returns {Array} - Updated array of flyby enemies (removed ones that have gone off-screen)
+     * @param {number} deltaTime - Time since last update
+     * @returns {Array} - Remaining enemies after update
      */
     updateFlybyEnemies(flybyEnemies, deltaTime) {
         const remainingEnemies = [];
-        const screenRightEdge = 300; // Right edge of the screen
+        const screenRightEdge = 800; // Increased right edge of the screen for visibility
         
         for (const enemy of flybyEnemies) {
-            // Move the enemy from left to right
-            enemy.position.x += enemy.speed * (deltaTime / 16); // Normalize by frame rate
+            // Move the enemy from left to right at a much slower speed
+            // Reduce speed by factor of 40 to make them crawl across screen
+            enemy.position.x += (enemy.speed / 80) * (deltaTime / 16);
             
             // Keep the enemy if it's still on screen
             if (enemy.position.x < screenRightEdge) {
@@ -1570,7 +1937,7 @@ class MonsterLogic {
         
         return remainingEnemies;
     }
-    
+
     /**
      * Get movement function for flyby enemies
      * @param {number} x - Initial X position

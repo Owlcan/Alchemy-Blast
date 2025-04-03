@@ -9,6 +9,20 @@ class ParticleSystem {
         this.particles = [];
         this.maxParticles = 200;
     }
+    
+    /**
+     * Gets the player's actual collision position (fixed Y coordinate)
+     * @param {number} playerX - The player's visual X position
+     * @returns {Object} - The player's collision position with fixed Y coordinate 
+     */
+    getPlayerCollisionPosition(playerX) {
+        // Use canvas height if available, otherwise use default 800
+        const screenHeight = this.game.canvas ? this.game.canvas.height : 800;
+        return {
+            x: playerX,
+            y: screenHeight - 525 // Fixed collision point 275px from bottom
+        };
+    }
 
     createParticle(x, y, type, options = {}) {
         // Don't create particles if we're at the limit
@@ -43,7 +57,20 @@ class ParticleSystem {
         }
     }
 
+    /**
+     * Create hit effect for player or enemy
+     * @param {number} x - X position of the hit
+     * @param {number} y - Y position of the hit
+     * @param {boolean} isEnemy - Whether this is an enemy hit (true) or player hit (false)
+     */
     createHitEffect(x, y, isEnemy = false) {
+        // If this is a player hit, ensure we're using the correct collision position
+        if (!isEnemy && this.game.player) {
+            const playerCollision = this.getPlayerCollisionPosition(x);
+            x = playerCollision.x;
+            y = -525; // Fixed Y position for player hit
+        }
+        
         const type = isEnemy ? 'enemyHit' : 'playerHit';
         const count = isEnemy ? 5 : 3;
         
@@ -78,6 +105,13 @@ class ParticleSystem {
      * @param {number} y - Y position of the hit
      */
     createShieldEffect(x, y) {
+        // If we have a player, ensure we're using the correct collision position
+        if (this.game.player) {
+            const playerCollision = this.getPlayerCollisionPosition(x);
+            x = playerCollision.x;
+            y = playerCollision.y;
+        }
+        
         // Create blue shield particles
         for (let i = 0; i < 12; i++) {
             this.createParticle(x, y, 'shield', {
@@ -203,7 +237,7 @@ class ParticleSystem {
             gradient.addColorStop(0, `rgba(255, 255, 220, ${alpha})`);
             gradient.addColorStop(0.3, `rgba(255, 200, 100, ${alpha * 0.7})`);
             gradient.addColorStop(1, `rgba(255, 150, 50, 0)`);
-            
+
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
             

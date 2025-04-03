@@ -1,5 +1,12 @@
 /**
  * Game Controller for Alchemy Blaster
+ * 
+ * Handles game mechanics including:
+ * - Game state management
+ * - Player and enemy movement
+ * - Collision detection
+ * - Projectile management
+ * - Score tracking
  */
 
 class GameController {
@@ -8,7 +15,13 @@ class GameController {
         this.gameState = {
             isActive: false,
             isPaused: false,
-            currentRound: 1,
+currentRound: 1,
+            currentWave: 1,
+            waveCompleted: false,
+            enemiesRemaining: 0,
+            score: 0,
+            selectedCharacter: null,
+currentRound: 1,
             currentWave: 1,
             waveCompleted: false,
             enemiesRemaining: 0,
@@ -22,7 +35,7 @@ class GameController {
         
         this.player = {
             position: { x: 0, y: 0 },
-            health: 100,
+                        health: 100,
             shield: 0,
             maxShield: 0,
             shieldRegenRate: 0,
@@ -38,13 +51,17 @@ class GameController {
             }
         };
         
+        // Store canvas reference that will be set by the renderer
+        this.canvas = null;
+        
+        // Enemy data
         this.enemies = [];
         this.projectiles = {
             player: [],
             enemy: [],
             pool: [], // Object pool for recycling projectiles
             activeCount: 0,
-            maxPoolSize: 200 // Maximum size of projectile pool
+            maxPoolSize: 500 // Maximum size of projectile pool
         };
         
         // Projectile types and effects - will make power-ups easier to implement
@@ -454,7 +471,6 @@ class GameController {
                     
                     // Calculate position around pentagram
                     const angle = ((i % pointCount) / pointCount) * Math.PI * 2 + Math.PI / 2; // Starting from top
-                    
                     positions.push({
                         type: enemies[i],
                         position: {
@@ -957,8 +973,8 @@ class GameController {
                     positions.push({
                         type: formation.boss.type,
                         position: { ...formation.boss.position },
-                        isBoss: true
-                    });
+                isBoss: true
+            });
                 }
                 
                 // Process first phase
@@ -1021,7 +1037,7 @@ class GameController {
     
     /**
      * Initialize player with character-specific stats
-     * @param {string} character - Selected character ('dere' or 'aliza')
+     * @param {string} character - Selected character ('dere', 'aliza', or 'shinshi')
      */
     initializePlayer(character) {
         // Reset base player properties
@@ -1062,6 +1078,23 @@ class GameController {
             this.player.burstMode = {
                 active: false,
                 cooldown: 3000,
+                lastUsed: 0,
+                isReady: true
+            };
+        } else if (character === 'shinshi') {
+            // Shinshi: Beam-focused character with more health but slightly slower movement
+            this.player.health = 4;
+            this.player.maxHealth = 4;
+            this.player.shield = 0;
+            this.player.maxShield = 0; // No shield
+            this.player.shieldRegenRate = 0;
+            this.player.speed = 4; // Increased speed by 30% (from original 3)
+            this.player.fireRate = 50; // Very fast fire rate for continuous beam
+            this.player.specialCooldown = 8000; // 8 seconds cooldown for special attack (powerful)
+            this.player.isBeamActive = false; // Whether beam is currently firing
+            this.player.burstMode = {
+                active: false,
+                cooldown: 8000,
                 lastUsed: 0,
                 isReady: true
             };
@@ -1119,9 +1152,9 @@ class GameController {
                 
                 // Play special attack sound
                 if (this.audioManager) {
-                    this.audioManager.playSfx('specialAttack');
+                    this.audioManager.playSfx('derespecialattack');
                 }
-                
+
                 // Create flash effect that damages all enemies on screen
                 this.createScreenClearingFlash();
             } else {
@@ -1140,14 +1173,29 @@ class GameController {
                         offset = i === 0 ? -30 : (i === 1 ? -10 : (i === 2 ? 10 : 30));
                     }
                     
-                    this.projectiles.player.push({
-                        x: this.player.position.x + offset,
-                        y: this.player.position.y - 20,
-                        vx: 0,
-                        vy: -10,
-                        damage: powerConfig.damage,
-                        sprite: Math.min(this.player.powerLevel - 1, 2) // Limit to available sprites
-                    });
+                    // Use ProjectileManager instead of directly manipulating the projectiles array
+                    if (this.projectileManager) {
+                        this.projectileManager.createPlayerProjectile(
+                            this.player.position.x + offset,
+                            this.player.position.y - 20,
+                            0,
+                            -20,
+                            {
+                                damage: powerConfig.damage,
+                                sprite: Math.min(this.player.powerLevel - 1, 2)
+                            }
+                        );
+                    } else {
+                        // Fallback to direct array manipulation if ProjectileManager isn't available
+                        this.projectiles.player.push({
+                            x: this.player.position.x + offset,
+                            y: this.player.position.y - 20,
+                            vx: 0,
+                            vy: -20,
+                            damage: powerConfig.damage,
+                            sprite: Math.min(this.player.powerLevel - 1, 2)
+                        });
+                    }
                 }
                 
                 // Play shot sound
@@ -1163,21 +1211,37 @@ class GameController {
                 this.player.burstMode.lastUsed = Date.now();
                 this.player.burstMode.isReady = false;
                 
-                // Create homing projectiles
-                this.projectiles.player.push({
-                    x: this.player.position.x,
-                    y: this.player.position.y - 20,
-                    vx: 0,
-                    vy: -15,
-                    damage: 15,
-                    sprite: 2, // Special sprite
-                    isHoming: true,
-                    isSpecialAttack: true
-                });
+                // Create homing projectiles using ProjectileManager
+                if (this.projectileManager) {
+                    this.projectileManager.createPlayerProjectile(
+                        this.player.position.x,
+                        this.player.position.y - 20,
+                        0,
+                        -20,
+                        {
+                            damage: 15,
+                            sprite: 2,
+                            isHoming: true,
+                            isSpecialAttack: true
+                        }
+                    );
+                } else {
+                    // Fallback
+                    this.projectiles.player.push({
+                        x: this.player.position.x,
+                        y: this.player.position.y - 20,
+                        vx: 0,
+                        vy: -20,
+                        damage: 15,
+                        sprite: 2,
+                        isHoming: true,
+                        isSpecialAttack: true
+                    });
+                }
                 
                 // Play special attack sound
                 if (this.audioManager) {
-                    this.audioManager.playSfx('specialAttack');
+                    this.audioManager.playSfx('alizaspecialattack');
                 }
             } else {
                 // Regular attack: Fast, weak shots
@@ -1188,14 +1252,29 @@ class GameController {
                                        (this.player.powerLevel === 2) ? (i === 0 ? -spreadAmount : spreadAmount) :
                                        (i === 0 ? -spreadAmount : i === 1 ? 0 : spreadAmount);
                     
-                    this.projectiles.player.push({
-                        x: this.player.position.x,
-                        y: this.player.position.y - 20,
-                        vx: spreadOffset,
-                        vy: -12,
-                        damage: 5,
-                        sprite: 0
-                    });
+                    // Use ProjectileManager instead of directly manipulating the projectiles array
+                    if (this.projectileManager) {
+                        this.projectileManager.createPlayerProjectile(
+                            this.player.position.x,
+                            this.player.position.y - 20,
+                            spreadOffset,
+                            -20,
+                            {
+                                damage: 5,
+                                sprite: 0
+                            }
+                        );
+                    } else {
+                        // Fallback
+                        this.projectiles.player.push({
+                            x: this.player.position.x,
+                            y: this.player.position.y - 20,
+                            vx: spreadOffset,
+                            vy: -20,
+                            damage: 5,
+                            sprite: 0
+                        });
+                    }
                 }
                 
                 // Play shot sound
@@ -1203,6 +1282,91 @@ class GameController {
                     this.audioManager.playSfx('playerShot');
                 }
             }
+        } else if (character === 'shinshi') {
+            // Shinshi: Beam attack
+            if (isSpecial && this.player.burstMode.isReady) {
+                // Special attack: Five horizontal beams across screen
+                this.player.burstMode.active = true;
+                this.player.burstMode.lastUsed = Date.now();
+                this.player.burstMode.isReady = false;
+                
+                // Create horizontal beam special attack
+                this.createShinshiSpecialAttack();
+                
+                // Play special attack sound
+                if (this.audioManager) {
+                    this.audioManager.playSfx('shinnypewpewpew');
+                }
+            } else {
+                const now = Date.now();
+                
+                // Start beam or continue beam
+                if (!this.player.isBeamActive) {
+                    // Start new beam attack
+                    this.player.isBeamActive = true;
+                    this.player.beamChargeStartTime = now;
+                    this.player.beamLevel = 1;
+                    
+                    // Play beam attack sound
+                    if (this.audioManager) {
+                        this.audioManager.playSfx('shinnyattack1');
+                    }
+                }
+                
+                // Create or update beam attack
+                this.createShinshiBeamAttack(this.player.beamLevel);
+            }
+        }
+    }
+    
+    /**
+     * Creates Shinshi's beam attack
+     * @param {number} level - Beam level (1-3)
+     */
+    createShinshiBeamAttack(level) {
+        // Clear any existing beam effects
+        this.projectiles.beams = this.projectiles.beams || [];
+        
+        // Use player's current power level instead of a separate beam level
+        const beamLevel = Math.min(this.player.powerLevel, 3);
+        
+        // Beam properties based on level
+        const beamWidth = beamLevel === 1 ? 15 : beamLevel === 2 ? 30 : 45;
+        const damage = beamLevel === 3 ? 2 : 1;
+        
+        // Create beam effect from player to top of screen
+        this.projectiles.beams.push({
+            x: this.player.position.x,
+            y: this.player.position.y - 10,
+            width: beamWidth,
+            height: this.player.position.y,
+            damage: damage,
+            level: beamLevel,
+            createdAt: Date.now()
+        });
+    }
+
+    /**
+     * Creates Shinshi's special attack with horizontal beams
+     */
+    createShinshiSpecialAttack() {
+        this.projectiles.specialBeams = this.projectiles.specialBeams || [];
+        const screenHeight = this.canvas.height;
+        const beamHeight = 40;
+        
+        // Create 5 horizontal beams across the screen
+        for (let i = 0; i < 5; i++) {
+            const yPosition = (i * screenHeight / 5) + (beamHeight / 2);
+            
+            this.projectiles.specialBeams.push({
+                x: 0,
+                y: yPosition,
+                width: this.canvas.width,
+                height: beamHeight,
+                damage: 10,
+                direction: i % 2 === 0 ? 'right' : 'left', // Alternating direction for visual effect
+                createdAt: Date.now()
+            });
         }
     }
     
@@ -1239,6 +1403,20 @@ class GameController {
         });
     }
     
+    /**
+     * Stops Shinshi's beam attack when the fire button is released
+     */
+    stopPlayerBeam() {
+        // Only applicable for Shinshi
+        if (this.gameState.selectedCharacter === 'shinshi' && this.player) {
+            this.player.isBeamActive = false;
+            // Clear any active beams
+            if (this.projectiles.beams) {
+                this.projectiles.beams = [];
+            }
+        }
+    }
+
     /**
      * Spawn a new wave of enemies based on the current round and wave
      */
@@ -1842,7 +2020,7 @@ class GameController {
         
         // Check collisions
         this.checkCollisions();
-    }
+        }
     
     /**
      * Update formation movement pattern
@@ -1911,8 +2089,8 @@ class GameController {
             }
             
             // Remove projectiles that are off-screen
-            if (projectile.y < -500 || projectile.y > 500 || 
-                projectile.x < -400 || projectile.x > 400) {
+            if (projectile.y < -100 || projectile.y > 1060 || 
+                projectile.x < -100 || projectile.x > 900) {
                 this.projectiles.player.splice(i, 1);
             }
         }
@@ -1931,9 +2109,14 @@ class GameController {
             // FIXED: Update adjustedY property to match current y position
             projectile.adjustedY = projectile.y;
             
+            // Update rotation for rotating projectiles
+            if (projectile.rotate && projectile.rotationSpeed) {
+                projectile.rotation = (projectile.rotation || 0) + projectile.rotationSpeed;
+            }
+            
             // Remove projectiles that are off-screen
-            if (projectile.y < -500 || projectile.y > 500 || 
-                projectile.x < -400 || projectile.x > 400) {
+            if (projectile.y < -100 || projectile.y > 1060 || 
+                projectile.x < -100 || projectile.x > 900) {
                 this.projectiles.enemy.splice(i, 1);
             }
         }
@@ -1972,9 +2155,10 @@ class GameController {
             for (let j = this.enemies.length - 1; j >= 0; j--) {
                 const enemy = this.enemies[j];
                 
-                // Calculate distance for collision
+                // Calculate distance WITHOUT applying the -350 offset
+                // since both projectile and enemy should use the same coordinate system
                 const dx = enemy.position.x - projectile.x;
-                const dy = (enemy.position.y - 350) - projectile.y; // Apply the same Y offset as in rendering
+                const dy = enemy.position.y - projectile.y; 
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 // Collision radius depends on enemy type
@@ -1998,13 +2182,67 @@ class GameController {
             }
         }
         
+        // Shinshi's beam vs enemies - NEW CODE
+        if (this.projectiles.beams && this.projectiles.beams.length > 0) {
+            for (const beam of this.projectiles.beams) {
+                for (let j = this.enemies.length - 1; j >= 0; j--) {
+                    const enemy = this.enemies[j];
+                    
+                    // Check if enemy is within the beam's horizontal range
+                    // Beam extends from its x position with width
+                    const beamLeftX = beam.x - beam.width / 2;
+                    const beamRightX = beam.x + beam.width / 2;
+                    
+                    // Check if enemy is within the beam's vertical range
+                    // Beam extends from player position to top of screen
+                    const enemyAdjustedY = enemy.position.y - 150; // Apply rendering offset
+                    
+                    if (enemy.position.x >= beamLeftX && enemy.position.x <= beamRightX && 
+                        enemy.position.y <= this.player.position.y) {
+                        // Enemy is hit by the beam
+                        enemy.health -= beam.damage;
+                        
+                        // Add visual effect if we have a particle system
+                        if (this.game && this.game.particleSystem) {
+                            this.game.particleSystem.createBeamHitEffect(
+                                enemy.position.x, enemy.position.y
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Shinshi's special beam vs enemies - NEW CODE
+        if (this.projectiles.specialBeams && this.projectiles.specialBeams.length > 0) {
+            for (const specialBeam of this.projectiles.specialBeams) {
+                for (let j = this.enemies.length - 1; j >= 0; j--) {
+                    const enemy = this.enemies[j];
+                    const enemyAdjustedY = enemy.position.y - 350; // Apply rendering offset
+                    
+                    // Check if enemy is within the horizontal beam's vertical range
+                    // Beam has full width but specific height
+                    const beamTopY = specialBeam.y - specialBeam.height / 2;
+                    const beamBottomY = specialBeam.y + specialBeam.height / 2;
+                    
+                    if (enemyAdjustedY >= beamTopY && enemyAdjustedY <= beamBottomY) {
+                        // Enemy is hit by the special beam
+                        enemy.health -= specialBeam.damage;
+                    }
+                }
+            }
+        }
+        
         // Enemy projectiles vs player
         for (let i = this.projectiles.enemy.length - 1; i >= 0; i--) {
             const projectile = this.projectiles.enemy[i];
             
+            // FIXED: Always set player Y position for collision at 275 pixels from bottom of screen
+            const playerCollisionY = this.canvas ? (this.canvas.height - 275) : 275;
+            
             // Calculate distance for collision
             const dx = this.player.position.x - projectile.x;
-            const dy = this.player.position.y - projectile.adjustedY; // Use adjusted Y for collision
+            const dy = playerCollisionY - projectile.adjustedY; // Use fixed Y position from bottom
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < 30) { // Player collision radius
@@ -2020,9 +2258,12 @@ class GameController {
         for (let i = this.powerups.length - 1; i >= 0; i--) {
             const powerup = this.powerups[i];
             
+            // FIXED: Always set player Y position for collision at 275 pixels from bottom of screen
+            const playerCollisionY = this.canvas ? (this.canvas.height - 275) : 275;
+            
             // Calculate distance for collision
             const dx = this.player.position.x - powerup.position.x;
-            const dy = this.player.position.y - powerup.position.y;
+            const dy = playerCollisionY - powerup.position.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < 40) { // Pickup radius
@@ -2037,12 +2278,13 @@ class GameController {
     
     /**
      * Handle player being hit
-     * @param {number} damage - Damage amount
+     * @     * @param {number} damage - Damage amount
      * @returns {boolean} - True if damage was applied, false if blocked by invulnerability
      */
     handlePlayerHit(damage) {
         // Don't take damage if recently hit (invulnerability frames)
-        if (Date.now() - this.player.lastDamageTime < 1000) {
+        // Reduced from 1000ms to 600ms (40% reduction)
+        if (Date.now() - this.player.lastDamageTime < 600) {
             return false;
         }
         
@@ -2053,30 +2295,26 @@ class GameController {
         if (this.gameState.selectedCharacter === 'dere') {
             // Dere: Shield takes damage first IF she has one from a power-up
             if (this.player.shield > 0) {
-                this.player.shield = Math.max(0, this.player.shield - damage);
-                
+                this.player.shield = Math.max(0, this.player.shield - (damage * 10)); // Increased shield damage by 10x
                 // Play shield hit sound if available
                 if (this.audioManager) {
                     this.audioManager.playSfx('shieldHit');
                 }
-                
                 // Create shield hit particle effect
                 if (this.game && this.game.particleSystem) {
                     this.game.particleSystem.createShieldEffect(
                         this.player.position.x, 
-                        this.player.position.y
+                        thisplayer.position.y
                     );
                 }
             } else {
                 // No shield, direct health damage for Dere
                 this.player.health -= damage;
-                
                 // Play hit sound if available
                 if (this.audioManager) {
                     const hitSoundNumber = Math.floor(Math.random() * 3) + 1;
                     this.audioManager.playSfx(`derehit${hitSoundNumber}`);
                 }
-                
                 // Check for game over
                 if (this.player.health <= 0) {
                     this.handleGameOver(false);
@@ -2085,14 +2323,13 @@ class GameController {
         } else if (this.gameState.selectedCharacter === 'aliza') {
             // Aliza: Shield takes damage first (she starts with a shield)
             if (this.player.shield > 0) {
-                // FIXED: removed the *10 multiplier
-                this.player.shield = Math.max(0, this.player.shield - damage);
-                
+                // Take 25% of max shield per hit instead of fixed amount
+                const shieldDamage = this.player.maxShield * 0.25;
+                this.player.shield = Math.max(0, this.player.shield - shieldDamage);
                 // Play shield hit sound if available
                 if (this.audioManager) {
                     this.audioManager.playSfx('shieldHit');
                 }
-                
                 // Create shield hit particle effect
                 if (this.game && this.game.particleSystem) {
                     this.game.particleSystem.createShieldEffect(
@@ -2103,17 +2340,26 @@ class GameController {
             } else {
                 // Shield depleted, take health damage
                 this.player.health--;
-                
                 // Play hit sound if available
                 if (this.audioManager) {
                     const hitSoundNumber = Math.floor(Math.random() * 3) + 1;
                     this.audioManager.playSfx(`alizahit${hitSoundNumber}`);
                 }
-                
                 // Check for game over
                 if (this.player.health <= 0) {
                     this.handleGameOver(false);
                 }
+            }
+        } else if (this.gameState.selectedCharacter === 'shinshi') {
+            // Shinshi: Direct health damage
+            this.player.health -= damage;
+            // Play hit sound if available
+            if (this.audioManager) {
+                this.audioManager.playSfx('shinnyhit1');
+            }
+            // Check for game over
+            if (this.player.health <= 0) {
+                this.handleGameOver(false);
             }
         }
         
@@ -2211,7 +2457,7 @@ class GameController {
             // Calculate time since last frame (approximate)
             const deltaTime = 16; // Assuming ~60fps
             
-            // Use the monster logic to update flyby enemies
+                       // Use the monster logic to update flyby enemies
             const remainingEnemies = this.monsterLogic.updateFlybyEnemies(flybyEnemies, deltaTime);
             
             // If any enemies were removed (went off screen), update the main enemies array
@@ -2229,3 +2475,9 @@ class GameController {
         }
     }
 }
+
+// Remove ES6 export statement
+// export { GameController };
+
+// Use a global variable instead to make the class accessible
+window.GameController = GameController;

@@ -1,4 +1,20 @@
 /**
+ * Renderer class for Alchemy Blaster
+ * Handles all rendering operations for the game
+ */
+class Renderer {
+    /**
+     * Create a new renderer
+     * @param {HTMLCanvasElement} canvas - The canvas element to render on
+     * @param {Object} assets - Game assets including images and sounds
+     */
+    constructor(canvas, assets) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.assets = assets || { images: {} };
+    }
+
+    /**
      * Draw projectiles
      * @param {Object} state - Current game state
      */
@@ -14,10 +30,12 @@
             const sprite = this.assets.images[spriteKey];
             
             if (sprite) {
+                // FIXED: Draw player projectiles directly at their coordinate
+                // without applying the Y offset, so they match collision logic
                 ctx.drawImage(
                     sprite,
                     this.canvas.width / 2 + projectile.x - sprite.width / 2,
-                    this.canvas.height / 2 + projectile.y - sprite.height / 2,
+                    projectile.y, // Remove the canvas.height / 2 offset
                     sprite.width,
                     sprite.height
                 );
@@ -25,13 +43,11 @@
                 // Fallback if sprite not found
                 ctx.fillStyle = '#00ffff';
                 ctx.beginPath();
+                // Draw a backup circle at the correct coordinates
                 ctx.arc(
                     this.canvas.width / 2 + projectile.x,
-                    this.canvas.height / 2 + projectile.y,
-                    5,
-                    0,
-                    Math.PI * 2
-                );
+                    projectile.y, // Remove the canvas.height / 2 offset
+                    5, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -43,7 +59,7 @@
             const sprite = this.assets.images[spriteKey];
             
             // Calculate projectile's adjusted Y for rendering
-            projectile.adjustedY = projectile.y - 350; // Apply the same offset as enemies
+            projectile.adjustedY = projectile.y - 0; // Apply the same offset as enemies
             
             if (sprite) {
                 // Draw with proper sizing
@@ -176,3 +192,123 @@
         // Restore context state
         ctx.restore();
     }
+    
+    /**
+     * Render particles
+     * @param {Array} particles - Array of particle objects
+     */
+    renderParticles(particles) {
+        if (!particles || particles.length === 0) return;
+        
+        const ctx = this.ctx;
+        
+        for (const particle of particles) {
+            if (!particle.active) continue;
+            
+            ctx.save();
+            ctx.globalAlpha = particle.alpha;
+            
+            // Use sprite if available
+            if (particle.sprite && this.assets.images[particle.sprite]) {
+                const sprite = this.assets.images[particle.sprite];
+                const scale = particle.scale || 1;
+                
+                ctx.drawImage(
+                    sprite,
+                    this.canvas.width / 2 + particle.x - (sprite.width * scale) / 2,
+                    this.canvas.height / 2 + particle.y - (sprite.height * scale) / 2,
+                    sprite.width * scale,
+                    sprite.height * scale
+                );
+            } else {
+                // Draw basic particle
+                ctx.fillStyle = particle.color || '#ffffff';
+                ctx.beginPath();
+                ctx.arc(
+                    this.canvas.width / 2 + particle.x,
+                    this.canvas.height / 2 + particle.y,
+                    particle.size || 3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                // Add glow effect for certain particle types
+                if (particle.type === 'shield' || particle.type === 'powerup') {
+                    ctx.shadowColor = particle.color || '#ffffff';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(
+                        this.canvas.width / 2 + particle.x,
+                        this.canvas.height / 2 + particle.y,
+                        (particle.size || 3) * 0.7,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
+            
+            ctx.restore();
+        }
+    }
+    
+    /**
+     * Draw player shield effect
+     * @param {Object} player - Player object with shield properties
+     */
+    drawPlayerShield(player) {
+        if (!player.shield || player.shield <= 0) return;
+        
+        const ctx = this.ctx;
+        const shieldMaxRadius = player.width * 1.2;
+        const shieldThickness = 3;
+        const shieldAlpha = 0.2 + (player.shield / player.maxShield) * 0.4;
+        
+        // Create pulsing effect
+        const pulseAmount = Math.sin(Date.now() * 0.005) * 5;
+        const radius = shieldMaxRadius + pulseAmount;
+        
+        ctx.save();
+        
+        // Draw outer glow
+        const gradient = ctx.createRadialGradient(
+            this.canvas.width / 2 + player.position.x,
+            this.canvas.height / 2 + player.position.y,
+            radius - 10,
+            this.canvas.width / 2 + player.position.x,
+            this.canvas.height / 2 + player.position.y,
+            radius + 10
+        );
+        
+        gradient.addColorStop(0, `rgba(100, 200, 255, 0)`);
+        gradient.addColorStop(0.5, `rgba(100, 200, 255, ${shieldAlpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(100, 200, 255, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(
+            this.canvas.width / 2 + player.position.x,
+            this.canvas.height / 2 + player.position.y,
+            radius + 10,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+        
+        // Draw shield border
+        ctx.strokeStyle = `rgba(150, 220, 255, ${shieldAlpha + 0.1})`;
+        ctx.lineWidth = shieldThickness;
+        ctx.beginPath();
+        ctx.arc(
+            this.canvas.width / 2 + player.position.x,
+            this.canvas.height / 2 + player.position.y,
+            radius,
+            0,
+            Math.PI * 2
+        );
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}

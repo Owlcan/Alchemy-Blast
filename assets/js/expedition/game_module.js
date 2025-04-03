@@ -33,7 +33,9 @@ const AlchemyBlaster = (() => {
         wave3: new Audio("assets/sounds/Unyielding Shadows.mp3"),
         finalBoss: new Audio("assets/sounds/MissShadowsResplendent.mp3"),
         currentTrack: null,
-        volume: 0.5 // Set default volume to 50%
+        volume: 0.5, // Set default volume to 50%
+        lastRound: 0,
+        lastWave: 0
     };
     
     // Sound effects
@@ -47,7 +49,24 @@ const AlchemyBlaster = (() => {
         shoot: new Audio('assets/sounds/shoot.wav'),
         enemyHit: new Audio('assets/sounds/hit.wav'),
         explosion: new Audio('assets/sounds/explosion.wav'),
-        powerup: new Audio('assets/sounds/powerup.wav')
+        powerup: new Audio('assets/sounds/powerup.wav'),
+        
+        // Additional sound references
+        shieldHit: new Audio('assets/sounds/shieldhit.wav'),
+        healthPotion: new Audio('assets/sounds/potion1.wav'),
+        shieldPotion: new Audio('assets/sounds/potion2.wav'),
+        powerPotion: new Audio('assets/sounds/potion4.wav'),
+        specialAttack: new Audio('assets/sounds/specialattack.wav'),
+        
+        // Character special attack sounds
+        dereSpecialAttack: new Audio('assets/sounds/derespecialattack.wav'),
+        alizaSpecialAttack: new Audio('assets/sounds/alizaspecialattack.wav'),
+        
+        // Shinshi specific sounds
+        shinBeamAttack1: new Audio('assets/sounds/shinnyzap1.wav'),
+        shinBeamAttack2: new Audio('assets/sounds/shinnyzap2.mp3'),
+        shinBeamLastUsed: 0, // Track which sound was played last
+        shinSpecialAttack: new Audio('assets/sounds/shinnypewpewpew.wav')
     };
     
     // Pre-load sounds
@@ -61,6 +80,10 @@ const AlchemyBlaster = (() => {
             sounds.hit = [new Audio('assets/sounds/alizahit1.wav'), new Audio('assets/sounds/alizahit2.wav')];
             sounds.gameOver = [new Audio('assets/sounds/alizagameover1.wav'), new Audio('assets/sounds/alizagameover2.wav')];
             sounds.victory = [new Audio('assets/sounds/alizavictory1.wav'), new Audio('assets/sounds/alizavictory2.wav')];
+        } else if (character === 'shinshi') {
+            sounds.hit = [new Audio('assets/sounds/shinnyhit1.wav')];
+            sounds.gameOver = [new Audio('assets/sounds/gameover.wav')]; // Reuse Dere's game over for now
+            sounds.victory = [new Audio('assets/sounds/shinnyvictory1.wav'), new Audio('assets/sounds/shinnyvictory2.wav')];
         }
     }
     
@@ -113,6 +136,9 @@ const AlchemyBlaster = (() => {
         gameController = new GameController();
         gameRenderer = new GameRenderer(canvasId, gameController);
         
+        // Set up audio manager for game controller
+        setupAudioManager();
+        
         // Set up event listeners
         setupEventListeners();
         
@@ -121,6 +147,108 @@ const AlchemyBlaster = (() => {
         
         // Start the game loop
         startGameLoop();
+    }
+    
+    // Set up audio manager for game controller
+    function setupAudioManager() {
+        // Create audio manager object to inject into game controller
+        const audioManager = {
+            playSfx: function(sfxName) {
+                switch(sfxName) {
+                    case 'playerHit':
+                        playCharacterSound('hit');
+                        break;
+                    case 'enemyHit':
+                        sounds.enemyHit.currentTime = 0;
+                        sounds.enemyHit.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'explosion':
+                        sounds.explosion.currentTime = 0;
+                        sounds.explosion.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'playerShot':
+                        sounds.shoot.currentTime = 0;
+                        sounds.shoot.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'specialAttack':
+                        // Play character-specific special attack sound
+                        if (gameController.gameState.selectedCharacter === 'dere') {
+                            sounds.dereSpecialAttack.currentTime = 0;
+                            sounds.dereSpecialAttack.play().catch(e => console.log("Failed to play sound:", e));
+                        } else if (gameController.gameState.selectedCharacter === 'aliza') {
+                            sounds.alizaSpecialAttack.currentTime = 0;
+                            sounds.alizaSpecialAttack.play().catch(e => console.log("Failed to play sound:", e));
+                        } else if (gameController.gameState.selectedCharacter === 'shinshi') {
+                            sounds.shinSpecialAttack.currentTime = 0;
+                            sounds.shinSpecialAttack.play().catch(e => console.log("Failed to play sound:", e));
+                        } else {
+                            sounds.specialAttack.currentTime = 0;
+                            sounds.specialAttack.play().catch(e => console.log("Failed to play sound:", e));
+                        }
+                        break;
+                    case 'gameOver':
+                        playCharacterSound('gameOver');
+                        break;
+                    case 'victory':
+                        playCharacterSound('victory');
+                        break;
+                    case 'shieldHit':
+                        sounds.shieldHit.currentTime = 0;
+                        sounds.shieldHit.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'healthPotion':
+                        sounds.healthPotion.currentTime = 0;
+                        sounds.healthPotion.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'shieldPotion':
+                        sounds.shieldPotion.currentTime = 0;
+                        sounds.shieldPotion.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'powerPotion':
+                        sounds.powerPotion.currentTime = 0;
+                        sounds.powerPotion.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'powerup':
+                        sounds.powerup.currentTime = 0;
+                        sounds.powerup.play().catch(e => console.log("Failed to play sound:", e));
+                        break;
+                    case 'shinBeamAttack':
+                        // Alternate between two electrical sounds for Shinshi's beam attack
+                        if (sounds.shinBeamLastUsed === 0 || sounds.shinBeamLastUsed === 2) {
+                            sounds.shinBeamAttack1.currentTime = 0;
+                            sounds.shinBeamAttack1.play().catch(e => console.log("Failed to play sound:", e));
+                            sounds.shinBeamLastUsed = 1;
+                        } else {
+                            sounds.shinBeamAttack2.currentTime = 0;
+                            sounds.shinBeamAttack2.play().catch(e => console.log("Failed to play sound:", e));
+                            sounds.shinBeamLastUsed = 2;
+                        }
+                        break;
+                }
+            },
+            
+            stopAll: function() {
+                // Stop all currently playing sound effects
+                Object.values(sounds).forEach(sound => {
+                    if (sound) {
+                        if (Array.isArray(sound)) {
+                            sound.forEach(s => {
+                                s.pause();
+                                s.currentTime = 0;
+                            });
+                        } else {
+                            sound.pause();
+                            sound.currentTime = 0;
+                        }
+                    }
+                });
+            }
+        };
+        
+        // Inject audio manager into game controller
+        if (gameController) {
+            gameController.audioManager = audioManager;
+        }
     }
     
     // Set up event listeners for user input
@@ -149,33 +277,38 @@ const AlchemyBlaster = (() => {
         if (element) {
             switch (element.type) {
                 case 'character':
+                    // Character select
+                    // Play select sound if available
+                    if (gameController.audioManager) {
+                        gameController.audioManager.playSfx('select');
+                    }
+                    
                     // Start game with selected character
                     startGame(element.value);
+                    
+                    // Play character-specific start sound
+                    if (gameController.audioManager) {
+                        if (element.value === 'dere') {
+                            gameController.audioManager.playSfx('dereselect1');
+                        } else if (element.value === 'aliza') {
+                            gameController.audioManager.playSfx('alizaselect1');
+                        } else if (element.value === 'shinshi') {
+                            gameController.audioManager.playSfx('shinnyattack1');
+                        }
+                    }
                     break;
                     
                 case 'restart':
-                    // Return to character select
+                    // Restart game
+                    if (gameController.audioManager) {
+                        gameController.audioManager.playSfx('select');
+                    }
                     resetGame();
                     break;
                     
                 case 'pause':
-                    // Toggle pause state
+                    // Toggle pause
                     togglePause();
-                    break;
-                
-                case 'volume-up':
-                    // Increase volume
-                    adjustVolume(0.1);
-                    break;
-                    
-                case 'volume-down':
-                    // Decrease volume
-                    adjustVolume(-0.1);
-                    break;
-                    
-                case 'volume-set':
-                    // Set volume directly to specified value
-                    setVolume(element.value);
                     break;
             }
         }
@@ -272,6 +405,10 @@ const AlchemyBlaster = (() => {
             case ' ':
             case 'z':
                 input.fire = false;
+                // For Shinshi, stop her beam when key is released
+                if (gameController.gameState.selectedCharacter === 'shinshi') {
+                    gameController.stopPlayerBeam();
+                }
                 break;
                 
             case 'x':
@@ -364,6 +501,12 @@ const AlchemyBlaster = (() => {
         // Reset input states
         input.left = false;
         input.right = false;
+        
+        // For Shinshi, stop her beam when touch ends
+        if (input.fire && gameController.gameState.selectedCharacter === 'shinshi') {
+            gameController.stopPlayerBeam();
+        }
+        
         input.fire = false;
         input.specialFire = false;
     }
@@ -413,10 +556,6 @@ const AlchemyBlaster = (() => {
         
         // Fire projectile using the controller
         gameController.firePlayerProjectile(isSpecial);
-        
-        // Play sound effect
-        sounds.shoot.currentTime = 0;
-        sounds.shoot.play();
     }
     
     // Handle wave change - updates background music
@@ -472,22 +611,46 @@ const AlchemyBlaster = (() => {
             gameController.movePlayer('right', true);
         }
         
-        // Handle continuous firing for Aliza
-        if ((input.fire || input.specialFire) && 
-            gameController.gameState.selectedCharacter === 'aliza') {
-            
-            // Get current time to control fire rate
-            const currentTime = Date.now();
-            
-            // Check if enough time has passed since last shot (fire rate limiting)
-            if (!gameController.player.lastFireTime || 
-                currentTime - gameController.player.lastFireTime > gameController.player.fireRate) {
+        // Handle character-specific continuous fire mechanics
+        if (gameController.gameState.selectedCharacter === 'aliza') {
+            // Aliza's continuous firing
+            if ((input.fire || input.specialFire)) {
+                // Get current time to control fire rate
+                const currentTime = Date.now();
                 
-                // Update last fire time
-                gameController.player.lastFireTime = currentTime;
+                // Check if enough time has passed since last shot (fire rate limiting)
+                if (!gameController.player.lastFireTime || 
+                    currentTime - gameController.player.lastFireTime > gameController.player.fireRate) {
+                    
+                    // Update last fire time
+                    gameController.player.lastFireTime = currentTime;
+                    
+                    // Fire projectile (regular or special based on input)
+                    firePlayerWeapon(input.specialFire);
+                }
+            }
+        } else if (gameController.gameState.selectedCharacter === 'shinshi') {
+            // Shinshi's beam attack - continuous as long as fire is pressed
+            if (input.fire) {
+                if (!gameController.player.isBeamActive) {
+                    // Start beam attack by firing normal weapon
+                    firePlayerWeapon(false);
+                }
                 
-                // Fire projectile (regular or special based on input)
-                firePlayerWeapon(input.specialFire);
+                // Keep firing while button is held, using normal fire logic
+                // instead of using special beam methods
+                const currentTime = Date.now();
+                if (!gameController.player.lastFireTime || 
+                    currentTime - gameController.player.lastFireTime > gameController.player.fireRate) {
+                    
+                    gameController.player.lastFireTime = currentTime;
+                    firePlayerWeapon(false);
+                }
+            }
+            
+            // Handle special attack button press
+            if (input.specialFire && !gameController.player.specialActive) {
+                firePlayerWeapon(true);
             }
         }
     }

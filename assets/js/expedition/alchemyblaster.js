@@ -65,6 +65,19 @@ class AlchemyBlaster {
         this.loadAssets();
     }
 
+    /**
+     * Gets the player's actual collision position (fixed Y coordinate)
+     * This is the global rule that should be used everywhere for player collision
+     * @param {number} playerX - The player's visual X position
+     * @returns {Object} - The player's collision position with fixed Y coordinate 
+     */
+    getPlayerCollisionPosition(playerX) {
+        return {
+            x: playerX,
+            y: this.canvas.height - 250 // FIXED: Now 250px from bottom of screen (previously was 525)
+        };
+    }
+
     handleMouseUp(e) {
         if (e.button === 0) { // Left click
             this.isShooting = false;
@@ -440,7 +453,20 @@ class AlchemyBlaster {
     updateProjectiles() {
         // Use the ProjectileManager for updating projectiles
         if (this.projectileManager) {
-            this.projectileManager.update();
+            this.projectileManager.update(16); // Provide default deltaTime of 16ms if not passed
+            
+            // Fix for score display issue
+            // The ProjectileManager increases score in gameController.gameState.score
+            // But we need to properly obtain this score from the game's structure
+            if (this.projectileManager.game && 
+                this.projectileManager.game.gameController && 
+                this.projectileManager.game.gameController.gameState) {
+                // Make sure we have a valid score value (avoid NaN)
+                const controllerScore = this.projectileManager.game.gameController.gameState.score;
+                if (typeof controllerScore === 'number' && !isNaN(controllerScore)) {
+                    this.score = controllerScore;
+                }
+            }
         } else {
             // Fallback to old method if ProjectileManager is not available
             this.projectiles = this.projectiles.filter(proj => !proj.update());
@@ -731,12 +757,13 @@ class AlchemyBlaster {
             return;
         }
 
-        // For normal waves, use time limit or check if all enemies are defeated
-        const enemiesRemaining = this.enemies.length;
+        // For normal waves, use time limit or check if all non-flyby enemies are defeated
+        // Filter out flyby enemies when counting remaining enemies
+        const normalEnemiesRemaining = this.enemies.filter(enemy => !enemy.isFlyby).length;
         
-        // Check if wave is complete (either all enemies are defeated or time limit reached)
-        if (waveElapsedTime >= 30000 || enemiesRemaining === 0) {
-            console.log(`Wave ${this.wave} completed in round ${this.round} - Time: ${waveElapsedTime}ms, Enemies remaining: ${enemiesRemaining}`);
+        // Check if wave is complete (either all required enemies are defeated or time limit reached)
+        if (waveElapsedTime >= 30000 || normalEnemiesRemaining === 0) {
+            console.log(`Wave ${this.wave} completed in round ${this.round} - Time: ${waveElapsedTime}ms, Required enemies remaining: ${normalEnemiesRemaining}`);
             this.advanceWave();
         }
     }
@@ -979,9 +1006,17 @@ class AlchemyBlaster {
             // Pass targets for player projectiles and enemy projectiles
             this.projectileManager.checkCollisions(this.enemies, [this.player]);
             
-            // Check powerups vs player
+            // Check powerups vs player with offset
             for (const powerup of this.powerups) {
-                if (this.checkCollision(powerup, this.player)) {
+                // Apply player offset for collision detection
+                const playerWithOffset = {
+                    x: this.player.x - this.player.width/2,
+                    y: -250 - this.player.height/2,
+                    width: this.player.width,
+                    height: this.player.height
+                };
+                
+                if (this.checkCollision(powerup, playerWithOffset)) {
                     this.powerups = this.powerups.filter(p => p !== powerup);
                     powerup.collect(this.player);
                 }
@@ -1000,18 +1035,34 @@ class AlchemyBlaster {
                 }
             }
 
-            // Check enemy projectiles vs player
+            // Check enemy projectiles vs player with offset
             for (const proj of this.enemyProjectiles || []) {
-                if (this.checkCollision(proj, this.player)) {
+                // Apply player offset for collision detection
+                const playerWithOffset = {
+                    x: this.player.x - this.player.width/2,
+                    y: this.player.y - this.player.height/2,
+                    width: this.player.width,
+                    height: this.player.height
+                };
+                
+                if (this.checkCollision(proj, playerWithOffset)) {
                     this.enemyProjectiles = this.enemyProjectiles.filter(p => p !== proj);
                     this.player.takeDamage();
                     this.particles.push(new Particle(this, proj.x, proj.y, 'hit'));
                 }
             }
 
-            // Check powerups vs player
+            // Check powerups vs player with offset
             for (const powerup of this.powerups) {
-                if (this.checkCollision(powerup, this.player)) {
+                // Apply player offset for collision detection
+                const playerWithOffset = {
+                    x: this.player.x - this.player.width/2,
+                    y: this.player.y - this.player.height/2,
+                    width: this.player.width,
+                    height: this.player.height
+                };
+                
+                if (this.checkCollision(powerup, playerWithOffset)) {
                     this.powerups = this.powerups.filter(p => p !== powerup);
                     powerup.collect(this.player);
                 }
@@ -1020,10 +1071,25 @@ class AlchemyBlaster {
     }
 
     checkCollision(a, b) {
+        // If the collision involves the player, use fixed Y position 275px from bottom of screen
+        let aY = a.y;
+        let bY = b.y;
+        let aHeight = a.height;
+        let bHeight = b.height;
+        
+        // Check if either object is the player
+        if (a === this.player || (this.player && a === this.player.position)) {
+            aY = 250; // Fixed collision point from bottom
+        }
+        if (b === this.player || (this.player && b === this.player.position)) {
+            bY = 250; // Fixed collision point from bottom
+        }
+        
+        // Standard rectangular collision check with adjusted Y positions
         return a.x < b.x + b.width &&
                a.x + a.width > b.x &&
-               a.y < b.y + b.height &&
-               a.y + a.height > b.y;
+               aY < bY + bHeight &&
+               aY + aHeight > bY;
     }
 
     distributeRewards() {
@@ -1034,6 +1100,10 @@ class AlchemyBlaster {
             'cottonfluff', 'eggs', 'butter', 'cream', 'birch-syrup', 
             'fractalcopper', 'flour', 'rocksalt', 'savourherb', 
             'sweetleaf', 'springwater', 'barkgum', 'berrimaters'
+        ];
+        
+        // Calculate reward count based on score (higher score = more items)
+        const baseRewardCount = Math.floor(this.score / 100);
         
         // Cap at 100 items maximum
         const rewardCount = Math.min(baseRewardCount, 100);
@@ -1167,6 +1237,7 @@ class AlchemyBlaster {
                 white-space: nowrap;
             }
         `;
+
         document.head.appendChild(style);
 
         // Add the game over screen to the document
@@ -1378,7 +1449,7 @@ class Player {
                 gradient.addColorStop(0.5, `rgba(100, 200, 255, ${alpha * 0.3})`);
                 gradient.addColorStop(0.8, `rgba(100, 200, 255, ${alpha})`);
                 gradient.addColorStop(1, `rgba(100, 200, 255, 0)`);
-                
+
                 this.game.ctx.fillStyle = gradient;
                 this.game.ctx.beginPath();
                 this.game.ctx.arc(
@@ -1697,22 +1768,21 @@ class Enemy {
         this.fadeAlpha = 1;        
         this.shieldActive = false;
         this.shieldCooldown= 0;
-        this.lastTeleport = 0;
-        this.spawnTime = Date.now();
+        this.lastTeleport = 0        this.spawnTime = Date.now();
         this.isInvulnerable = false;
         this.isCharging = false;
         // Check if sprite is available and log result
         if (!this.game.assets.images[this.type]) {
             console.error(`ERROR: Sprite for ${this.type} not found!Available sprites:`, Object.keys(this.game.assets.images));
         } else {
-            console.log(`Successfully created ${this.type} enemy with image:`, this.game.assets.images[this.type].src);
+            console.log(`Successfully created ${thistype} enemy with image:`, this.game.assets.images[this.type].src);
         }
     }
 
     getInitialHealth() {
         if (this.type === 'darklingboss1') return 25;
         if (this.type === 'darklingboss2') return 30;
-        if (this.type === 'darklingboss3') return 4000; // 100x HP for final boss
+        if (this.type=== 'darklingboss3') return 4000; // 100x HP for final boss
         if (this.type === 'darkling4') return 3;
         if (this.type === 'darkling7') return 10;
         if (['darkling6', 'darkling8'].includes(this.type)) return 2;
@@ -1755,12 +1825,12 @@ class Enemy {
                             // Reset after random movement
                             isRandomMove = false;
                             initialX = this.x;
-                                                       initialY = this.y;
+                            initialY = this.y;
                         }
                     }
-                    // Normal movement pattern
+                    // Normalmovement pattern
                     const normalizedTime = t * moveSpeed;
-                                       const pattern = Math.floor(normalizedTime / 4) % 8;
+                    const pattern = Math.floor(normalizedTime / 4) % 8;
                     const progress = (normalizedTime % 4) - 2;
                     let x, y;
                     switch(pattern) {
@@ -1914,8 +1984,8 @@ class Enemy {
     }
 
     getPoints() {
-        if (this.type === 'darklingBoss1') return 100;
-        if (this.type === 'darklingBoss2') return this.health > 25 ? Infinity : 4000;
+        if (this.type === 'darklingboss1') return 100;
+        if (this.type === 'darklingboss2') return this.health > 25 ? Infinity : 4000;
         return this.type.includes('boss') ? 100 : 10;
     }
 
@@ -2449,13 +2519,11 @@ AlchemyBlaster.prototype.drawPlayer = function() {
     // Draw Dere's health layers if using Dere
     if (this.selectedCharacter === 'dere') {
         // Draw health layers on top of player sprite
-        if (player.health >= 1) {
-            const hp1 = this.assets.images.derehp1;
-            if (hp1 && hp1.complete) {
-                ctx.globalAlpha = 0.8;
-                ctx.drawImage(hp1, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
-                ctx.globalAlpha = 1.0;
-            }
+        const hp1 = this.assets.images.derehp1;
+        if (hp1 && hp1.complete) {
+            ctx.globalAlpha = 0.8;
+            ctx.drawImage(hp1, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+            ctx.globalAlpha = 1.0;
         }
         
         if (player.health >= 2) {
@@ -2477,6 +2545,11 @@ AlchemyBlaster.prototype.drawPlayer = function() {
         }
     } else if (this.selectedCharacter === 'aliza' && player.shield > 0) {
         // Draw Aliza's shield if she has shield remaining
+        const barX = 20;  // Define barX for the shield bar
+        const barY = this.canvas.height - 50; // Define barY for the shield bar
+        const barWidth = 150; // Define barWidth for the shield bar
+        const barHeight = 15; // Define barHeight for the shield bar
+        
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.width / 1.5, 0, Math.PI * 2);
         
@@ -2489,6 +2562,7 @@ AlchemyBlaster.prototype.drawPlayer = function() {
         gradient.addColorStop(0, '#3355ff');
         gradient.addColorStop(0.5, '#33ccff');
         gradient.addColorStop(1, '#33ffff');
+        
         ctx.fillStyle = gradient;
         ctx.fillRect(barX, barY, barWidth * shieldPercent, barHeight);
         
@@ -2662,23 +2736,19 @@ AlchemyBlaster.prototype.handleInput = function(key) {
         case 'characterSelection':
             this.handleCharacterSelectionInput(key);
             break;
-            
         case 'playing':
             this.handleGamePlayInput(key);
             break;
-            
         case 'paused':
             if (key === 'p' || key === 'Escape') {
                 this.togglePause();
             }
             break;
-            
         case 'gameOver':
             if (key === 'Enter') {
                 this.showCharacterSelection();
             }
             break;
-            
         case 'title':
             if (key === 'Enter' || key === ' ') {
                 this.showCharacterSelection();
@@ -2695,19 +2765,15 @@ AlchemyBlaster.prototype.handleGamePlayInput = function(key) {
         case 'ArrowLeft':
             this.movePlayerLeft();
             break;
-            
         case 'ArrowRight':
             this.movePlayerRight();
             break;
-            
         case ' ':
             this.fireProjectile();
             break;
-            
         case 'Shift':
             this.useSpecialAbility();
             break;
-            
         case 'p':
         case 'Escape':
             this.togglePause();
@@ -2763,10 +2829,10 @@ AlchemyBlaster.prototype.fireProjectile = function() {
         // Dere has directional offset based on facing direction
         if (player.currentSprite === 'dereleft') {
             shotOriginX += 5; // North-east when facing left
-            shotOriginY -= 5;
+            shotOriginY -= 5; // North-east when facing left
         } else {
             shotOriginX -= 5; // North-west when facing right
-            shotOriginY -= 5;
+            shotOriginY -= 5; // North-west when facing right
         }
     }
     
@@ -2776,8 +2842,8 @@ AlchemyBlaster.prototype.fireProjectile = function() {
         shotOriginX,
         shotOriginY,
         shotSprite,
-        player.projectileSpeed,
-        player.projectileScale
+        this.player.projectileSpeed,
+        this.player.projectileScale
     ));
     
     // Play shot sound
@@ -2827,8 +2893,7 @@ AlchemyBlaster.prototype.useSpecialAbility = function() {
                 this.player.y - this.player.height / 2,
                 'shot1',
                 this.player.projectileSpeed,
-                this.player.projectileScale,
-                rad
+                this.player.projectileScale
             ));
         }
     }

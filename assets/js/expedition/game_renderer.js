@@ -26,8 +26,9 @@ class GameRenderer {
         // UI elements
         this.uiElements = {
             characterSelect: {
-                dereButton: { x: 50, y: 300, width: 300, height: 400 },
-                alizaButton: { x: 450, y: 300, width: 300, height: 400 }
+                dereButton: { x: 50, y: 300, width: 230, height: 400 },
+                alizaButton: { x: 290, y: 300, width: 230, height: 400 },
+                shinshiButton: { x: 530, y: 300, width: 230, height: 400 }
             }
         };
         
@@ -55,7 +56,7 @@ class GameRenderer {
         const characterSprites = this.gameController.monsterLogic.characterSprites;
         
         // Load character sprites
-        for (const character of ['dere', 'aliza']) {
+        for (const character of ['dere', 'aliza', 'shinshi']) {
             for (const type of ['select', 'left', 'right', 'gameover']) {
                 this.loadSprite(`${character}_${type}`, characterSprites[character][type]);
             }
@@ -65,6 +66,13 @@ class GameRenderer {
                 this.loadSprite(`${character}_shot_${index}`, shot);
             });
         }
+        
+        // Load Shinshi's special beam attack sprites
+        this.loadSprite('shinbeam1', 'assets/images/darklings/shinbeam1.png');
+        this.loadSprite('shinbeam2', 'assets/images/darklings/shinbeam2.png');
+        this.loadSprite('shinbeam3', 'assets/images/darklings/shinbeam3.png');
+        this.loadSprite('shinspecialbeamleftside', 'assets/images/darklings/shinspecialbeamleftside.png');
+        this.loadSprite('shinspecialbeamrightside', 'assets/images/darklings/shinspecialbeamrightside.png');
         
         // Load enemy sprites - corrected naming convention from MOB to mob (lowercase)
         for (let i = 1; i <= 10; i++) {
@@ -76,9 +84,15 @@ class GameRenderer {
             this.loadSprite(`darklingboss${i}`, `assets/images/darklings/darklingboss${i}.png`);
         }
         
-        // Load projectile sprites - only use shot1 and shot2 (we know shot3 is missing)
-        this.loadSprite('shot1', 'assets/images/darklings/shot1.png');
-        this.loadSprite('shot2', 'assets/images/darklings/shot2.png');
+        // Load darkling projectile sprites - use the specific darklingshot sprites
+        for (let i = 1; i <= 7; i++) {
+            this.loadSprite(`darklingshot${i}`, `assets/images/darklings/darklingshot${i}.png`);
+        }
+        this.loadSprite('darklingshotspecial', 'assets/images/darklings/darklingshotspecial.png');
+        
+        // Load generic shot sprites for backward compatibility
+        this.loadSprite('shot1', 'assets/images/darklings/darklingshot1.png');
+        this.loadSprite('shot2', 'assets/images/darklings/darklingshot2.png');
         
         // Load powerup sprites - corrected paths to include darklings folder
         this.loadSprite('healthpotion', 'assets/images/darklings/health_potion.png');
@@ -362,6 +376,10 @@ class GameRenderer {
         const alizaBtn = this.uiElements.characterSelect.alizaButton;
         this.drawCharacterOption('aliza', alizaBtn.x, alizaBtn.y, alizaBtn.width, alizaBtn.height);
         
+        // Draw Shinshi character option
+        const shinshiBtn = this.uiElements.characterSelect.shinshiButton;
+        this.drawCharacterOption('shinshi', shinshiBtn.x, shinshiBtn.y, shinshiBtn.width, shinshiBtn.height);
+        
         // Draw instruction text AFTER drawing character buttons (moved from above)
         // Position it below the character buttons
         this.drawText('Select your character', this.canvas.width / 2, alizaBtn.y + alizaBtn.height + 30, 
@@ -410,12 +428,12 @@ class GameRenderer {
         }
         
         // Draw character name
-        const displayName = character === 'dere' ? 'DERE' : 'ALIZA';
+        const displayName = character === 'dere' ? 'DERE' : character === 'aliza' ? 'ALIZA' : 'SHINSHI';
         this.drawText(displayName, x + width/2, y + height - 20, 
                      this.textSettings.button, 'center');
         
         // Draw character trait
-        const trait = character === 'dere' ? 'Balanced' : 'Technical';
+        const trait = character === 'dere' ? 'Balanced' : character === 'aliza' ? 'Technical' : 'Specialized';
         this.drawText(trait, x + width/2, y + height - 45, 
                     { font: '16px Arial', color: '#CCCCCC', shadow: '#000000' }, 'center');
     }
@@ -447,8 +465,8 @@ class GameRenderer {
                 height *= 1.5;
             }
             
-            // Position the player higher above the health and shield bars
-            // Move from 100px to 75px above the coordinate origin
+            // Position player at the bottom by counteracting the enemyRenderingOffset
+            // This keeps the player at the bottom while enemies are properly positioned
             const playerYPosition = 200;
             
             // Draw player at the correct position with increased size
@@ -460,8 +478,11 @@ class GameRenderer {
                 height
             );
             
-            // Also update the collision position for gameplay
-            player.position.y = playerYPosition;
+            // Store the actual gameplay position for the player
+            // This is the position in the game's coordinate system (without visual offset)
+            // Keep the player's x position unchanged, but use the fixed 200 for y
+            // This is the logical game position, not the visual position
+            player.position.y = 200;
         }
         
         // Draw shield if active
@@ -485,10 +506,13 @@ class GameRenderer {
             // Draw shield with pulsing animation
             const scale = 1.1 + Math.sin(Date.now() * 0.005) * 0.1;
             
+            // Apply the same offset correction as for the player
+            const shieldY = player.position.y;
+            
             this.ctx.drawImage(
                 shieldSprite,
                 player.position.x - (shieldSprite.width / 2) * scale,
-                player.position.y - (shieldSprite.height / 2) * scale,
+                shieldY - (shieldSprite.height / 2) * scale,
                 shieldSprite.width * scale,
                 shieldSprite.height * scale
             );
@@ -501,7 +525,11 @@ class GameRenderer {
             this.ctx.globalAlpha = 0.3 + (player.shield / player.maxShield) * 0.3;
             this.ctx.fillStyle = 'rgba(100, 200, 255, 0.5)';
             this.ctx.beginPath();
-            this.ctx.arc(player.position.x, player.position.y, radius, 0, Math.PI * 2);
+            
+            // Apply the same offset correction as for the player
+            const shieldY = player.position.y;
+            
+            this.ctx.arc(player.position.x, shieldY, radius, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.strokeStyle = 'rgba(150, 220, 255, 0.8)';
             this.ctx.lineWidth = 2;
@@ -536,23 +564,20 @@ class GameRenderer {
                     height *= scale;
                 }
                 
-                // Position enemies much higher - move them further up and off-screen
-                // Using a larger negative offset to place them higher than before
-                const adjustedY = enemy.position.y - 350; // Increased offset to move enemies higher
-                
-                // Draw the enemy with appropriate scaling and adjusted position
+                // Draw the enemy using its original position - no manual Y offset needed now
+                // The global transform handles the offset for all rendered elements
                 this.ctx.drawImage(
                     sprite,
                     enemy.position.x - width / 2,
-                    adjustedY - height / 2 + bobOffset,
+                    enemy.position.y - height / 2 + bobOffset,
                     width,
                     height
                 );
                 
                 // Draw health bar for enemies with more than 1 health
                 if (enemy.health > 1) {
-                    // Need to adjust the health bar position too
-                    this.renderEnemyHealthBar(enemy, adjustedY);
+                    // No need for adjustedY anymore - use enemy's actual position
+                    this.renderEnemyHealthBar(enemy, enemy.position.y);
                 }
             }
         }
@@ -561,16 +586,16 @@ class GameRenderer {
     /**
      * Render enemy health bar
      * @param {Object} enemy - Enemy object
-     * @param {number} adjustedY - Adjusted Y position for enemy
+     * @param {number} yPosition - Y position for enemy
      */
-    renderEnemyHealthBar(enemy, adjustedY) {
+    renderEnemyHealthBar(enemy, yPosition) {
         const initialHealth = this.gameController.monsterLogic.getInitialHealth(enemy.type);
         const healthPercent = Math.max(0, enemy.health / initialHealth);
         
         const barWidth = 40;
         const barHeight = 5;
         const x = enemy.position.x - barWidth / 2;
-        const y = adjustedY + 25; // Position below enemy, using the adjusted Y
+        const y = yPosition + 25; // Position below enemy, using the original position
         
         // Background
         this.ctx.fillStyle = '#333333';
@@ -613,8 +638,11 @@ class GameRenderer {
                 const width = sprite.width * scaleFactor;
                 const height = sprite.height * scaleFactor;
                 
+                // Counteract the enemy rendering offset for player projectiles
+                // This ensures player projectiles appear at the correct visual position
+                const projectileY = projectile.y;
+                
                 // For Aliza, create a spread pattern to ensure coverage across the screen
-                // This works by calculating multiple draw positions if it's Aliza
                 if (character === 'aliza' && projectile.isSpecialAttack) {
                     // Draw a wider pattern for Aliza's special attacks
                     // We'll draw 3 projectiles side by side to create a spread
@@ -624,7 +652,7 @@ class GameRenderer {
                         this.ctx.drawImage(
                             sprite,
                             projectile.x + offset - width / 2,
-                            projectile.y - height / 2,
+                            projectileY - height / 2,  // Use the offset-corrected Y position
                             width,
                             height
                         );
@@ -634,63 +662,200 @@ class GameRenderer {
                     this.ctx.drawImage(
                         sprite,
                         projectile.x - width / 2,
-                        projectile.y - height / 2,
+                        projectileY - height / 2,  // Use the offset-corrected Y position
                         width,
                         height
                     );
                 }
             } else {
                 // Fallback if sprite not found - draw a simple colored circle
+                // Also apply the offset correction for the fallback
+                const projectileY = projectile.y;
+                
                 this.ctx.fillStyle = '#00ffff';
                 this.ctx.beginPath();
-                this.ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
+                this.ctx.arc(projectile.x, projectileY, 5, 0, Math.PI * 2);
                 this.ctx.fill();
             }
         }
-        
-        // Render enemy projectiles - SIMPLIFIED for reliability
-        for (const projectile of projectiles.enemy) {
-            // Get enemy projectile sprite
-            const spriteName = projectile.sprite || 'shot1';
-            const sprite = this.sprites[spriteName] || this.sprites['shot1'];
-            
-            // Apply the same Y offset that we use for enemies (-350)
-            // This ensures projectiles appear to come from the enemy positions
-            const adjustedY = projectile.y - 350;
-            
-            // Draw the enemy projectile
-            if (sprite && sprite.complete) {
-                // Get dimensions (use projectile settings if available, otherwise use sprite size)
-                const width = projectile.width || sprite.width || 30;
-                const height = projectile.height || sprite.height || 30;
+
+        // Render enemy projectiles
+        if (projectiles.enemy && projectiles.enemy.length > 0) {
+            for (const projectile of projectiles.enemy) {
+                // Get the actual sprite name from the projectile object or default to darklingshot1
+                const spriteName = projectile.sprite || 'darklingshot1';
+                const sprite = this.sprites[spriteName];
                 
+                // Calculate the adjusted position for enemy projectiles
+                // No Y adjustment needed since enemy projectiles use the same coordinate system as player projectiles
+                const x = projectile.x;
+                const y = projectile.y;
+                
+                if (sprite && sprite.complete) {
+                    // Save context for rotation if needed
+                    this.ctx.save();
+                    
+                    // Calculate dimensions and position
+                    const width = projectile.width || 30;
+                    const height = projectile.height || 30;
+                    
+                    // Handle rotation for projectiles that should rotate
+                    if (projectile.rotate && projectile.rotation !== undefined) {
+                        // Rotate around the center of the projectile
+                        this.ctx.translate(x, y);
+                        this.ctx.rotate(projectile.rotation);
+                        
+                        // Draw at the origin (since we've translated)
+                        this.ctx.drawImage(
+                            sprite,
+                            -width / 2,
+                            -height / 2,
+                            width,
+                            height
+                        );
+                    } else {
+                        // Draw without rotation
+                        this.ctx.drawImage(
+                            sprite,
+                            x - width / 2,
+                            y - height / 2,
+                            width,
+                            height
+                        );
+                    }
+                    
+                    // Restore context after rotation
+                    this.ctx.restore();
+                } else {
+                    // Fallback if sprite not found
+                    this.ctx.fillStyle = '#ff5500'; // Orange/red for enemy projectiles
+                    this.ctx.beginPath();
+                    this.ctx.arc(
+                        x, 
+                        y, 
+                        (projectile.width || 15) / 2, 
+                        0, 
+                        Math.PI * 2
+                    );
+                    this.ctx.fill();
+                    
+                    // Add "points" to make it look more like a projectile
+                    this.ctx.strokeStyle = '#ff7700';
+                    this.ctx.lineWidth = 2;
+                    const points = 3;
+                    for (let i = 0; i < points; i++) {
+                        const angle = (i / points) * Math.PI * 2;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x, y);
+                        this.ctx.lineTo(
+                            x + Math.cos(angle) * (projectile.width || 15),
+                            y + Math.sin(angle) * (projectile.height || 15)
+                        );
+                        this.ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Render Shinshi's beam attacks if any exist
+        if (character === 'shinshi' && projectiles.beams && projectiles.beams.length > 0) {
+            this.renderBeams(projectiles.beams);
+        }
+
+        // Render Shinshi's special beam attacks if any exist
+        if (character === 'shinshi' && projectiles.specialBeams && projectiles.specialBeams.length > 0) {
+            this.renderSpecialBeams(projectiles.specialBeams);
+        }
+    }
+
+    /**
+     * Render Shinshi's beam attacks
+     * @param {Array} beams - Array of beam objects
+     */
+    renderBeams(beams) {
+        for (const beam of beams) {
+            // Calculate pulsation alpha based on time
+            const pulseFactor = Math.sin(Date.now() * 0.008) * 0.3 + 0.7; // Value between 0.4 and 1.0
+            // Get appropriate beam sprite based on level
+            const spriteName = `shinbeam${beam.level}`;
+            const sprite = this.sprites[spriteName];
+            // Counteract the enemy rendering offset for beam origins
+            const beamY = beam.y;
+            if (sprite && sprite.complete) {
+                // Calculate beam dimensions - beam should reach the top edge of screen
+                const x = beam.x - beam.width / 2;
+                // Instead of stretching the sprite, we'll repeat it to reach the top
+                const beamHeight = sprite.height;
+                const distanceToTop = beamY + this.canvas.height/2; // Distance from beam source to top of screen
+                const repetitions = Math.ceil(distanceToTop / beamHeight);
+                // Apply pulsating effect with globalAlpha
+                this.ctx.globalAlpha = pulseFactor;
+                // Draw the beam by repeating the sprite from player position up to the top of screen
+                for (let i = 0; i < repetitions; i++) {
+                    this.ctx.drawImage(
+                        sprite,
+                        x,
+                        beamY - (i+1) * beamHeight,  // Use the offset-corrected Y position
+                        beam.width,
+                        beamHeight
+                    );
+                }
+                // Reset global alpha
+                this.ctx.globalAlpha = 1.0;
+            } else {
+                // Fallback if sprite not found
+                this.ctx.globalAlpha = pulseFactor * 0.7;
+                this.ctx.fillStyle = beam.level === 3 ? '#88ccff' : beam.level === 2 ? '#66aaff' : '#4488ff';
+                // Simple line for fallback - also using offset-corrected Y position
+                const distanceToTop = beamY + this.canvas.height/2;
+                this.ctx.fillRect(beam.x - beam.width / 2, beamY - distanceToTop, beam.width, distanceToTop);
+                this.ctx.globalAlpha = 1.0;
+            }
+        }
+    }
+
+    /**
+     * Render Shinshi's special attack (horizontal beams)
+     * @param {Array} specialBeams - Array of special beam objects
+     */
+    renderSpecialBeams(specialBeams) {
+        if (!specialBeams || specialBeams.length === 0) {
+            return;
+        }
+        
+        for (const beam of specialBeams) {
+            // Calculate how long the beam has been active
+            const beamAge = Date.now() - beam.createdAt;
+            // Skip if the beam has expired (duration of 800ms)
+            if (beamAge > 800) continue;
+            // Counteract the enemy rendering offset for special beams
+            const beamY = beam.y;
+            // Get the appropriate sprite based on direction
+            const spriteKey = beam.direction === 'right' ? 
+                'shinspecialbeamrightside' : 'shinspecialbeamleftside';
+            const sprite = this.sprites[spriteKey];
+            if (sprite && sprite.complete) {
+                // Draw the full-width beam
                 this.ctx.drawImage(
                     sprite,
-                    projectile.x - width / 2,
-                    adjustedY - height / 2,
-                    width,
-                    height
+                    0,                  // Source X
+                    0,                  // Source Y
+                    sprite.width,       // Source width
+                    sprite.height,      // Source height
+                    -this.canvas.width/2,  // Destination X
+                    beamY - beam.height/2,  // Destination Y with offset correction
+                    this.canvas.width,   // Destination width
+                    beam.height         // Destination height
                 );
-                
-                // Store adjusted Y for collision detection
-                projectile.adjustedY = adjustedY;
             } else {
-                // Fallback if sprite not found - draw a simple colored circle
-                this.ctx.fillStyle = '#ff5555';
-                this.ctx.beginPath();
-                this.ctx.arc(projectile.x, adjustedY, 8, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                // Add a glowing effect for visibility
-                this.ctx.shadowColor = '#ff0000';
-                this.ctx.shadowBlur = 10;
-                this.ctx.beginPath();
-                this.ctx.arc(projectile.x, adjustedY, 5, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.shadowBlur = 0; // Reset shadow
-                
-                // Store adjusted Y for collision detection
-                projectile.adjustedY = adjustedY;
+                // Fallback rendering with color - also using offset-corrected Y position
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.fillRect(
+                    -this.canvas.width/2,
+                    beamY - beam.height/2,  // Use the offset-corrected Y position
+                    this.canvas.width,
+                    beam.height
+                );
             }
         }
     }
@@ -854,103 +1019,95 @@ class GameRenderer {
                 this.ctx.fillText(`${Math.floor(player.shield)}`, shieldX + shieldWidth / 2, shieldY + 15);
                 this.ctx.textAlign = "left";
             }
-        } else {
-            // Aliza: Show shield bar and single health point with chrome style
+        } else if (character === 'aliza') {
+            // Aliza: Show health segments like Dere, but with 4 segments
             this.ctx.fillStyle = "#33ff66";
-            this.ctx.fillText(`Shield: `, x, y);
-            
-            // Draw shield bar with chrome style
-            const shieldWidth = 150;
-            const shieldBarWidth = (player.shield / player.maxShield) * shieldWidth;
-            
+            this.ctx.fillText(`Health: `, x, y);
             this.ctx.shadowBlur = 0; // Turn off shadow for bars
             
-            // Chrome style shield bar background
-            const shieldX = x + 80;
-            const shieldY = y - 15;
-            const shieldHeight = 20;
-            
-            // Background gradient
-            const bgGradient = this.ctx.createLinearGradient(shieldX, shieldY, shieldX, shieldY + shieldHeight);
-            bgGradient.addColorStop(0, "#444");
-            bgGradient.addColorStop(0.5, "#333");
-            bgGradient.addColorStop(1, "#222");
-            
-            this.ctx.fillStyle = bgGradient;
-            this.ctx.fillRect(shieldX, shieldY, shieldWidth, shieldHeight);
-            
-            // Shield fill with chrome appearance
-            const fillGradient = this.ctx.createLinearGradient(shieldX, shieldY, shieldX, shieldY + shieldHeight);
-            fillGradient.addColorStop(0, "rgba(100, 180, 255, 1)");
-            fillGradient.addColorStop(0.5, "rgba(30, 80, 170, 1)");
-            fillGradient.addColorStop(1, "rgba(100, 180, 255, 1)");
-            
-            this.ctx.fillStyle = fillGradient;
-            this.ctx.fillRect(shieldX, shieldY, shieldBarWidth, shieldHeight);
-            
-            // Add highlight effect at the top
-            this.ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-            this.ctx.fillRect(shieldX, shieldY, shieldBarWidth, shieldHeight / 3);
-            
-            // Add dark gray outline
-            this.ctx.strokeStyle = "#444";
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(shieldX, shieldY, shieldWidth, shieldHeight);
-            
-            // Add shield value as LCD text
-            this.ctx.shadowColor = "#33ff66";
-            this.ctx.shadowBlur = 5;
-            this.ctx.fillStyle = "#33ff66";
-            this.ctx.textAlign = "center";
-            this.ctx.fillText(`${Math.floor(player.shield)}`, shieldX + shieldWidth / 2, shieldY + 15);
-            this.ctx.textAlign = "left";
-            
-            // Draw health point with chrome style
-            this.ctx.shadowColor = "#33ff66";
-            this.ctx.shadowBlur = 5;
-            this.ctx.fillStyle = "#33ff66";
-            this.ctx.textAlign = "left";
-            this.ctx.fillText(`Health: `, x, y + 25);
-            
-            this.ctx.shadowBlur = 0;
-            
-            // Health segment with chrome style
-            const healthX = x + 80;
-            const healthY = y + 10;
-            const healthWidth = 25;
-            const healthHeight = 20;
-            
-            // Background gradient
-            const healthBgGradient = this.ctx.createLinearGradient(healthX, healthY, healthX, healthY + healthHeight);
-            healthBgGradient.addColorStop(0, "#444");
-            healthBgGradient.addColorStop(0.5, "#333");
-            healthBgGradient.addColorStop(1, "#222");
-            
-            this.ctx.fillStyle = healthBgGradient;
-            this.ctx.fillRect(healthX, healthY, healthWidth, healthHeight);
-            
-            // Fill if health is available
-            if (player.health > 0) {
-                const healthFillGradient = this.ctx.createLinearGradient(healthX, healthY, healthX, healthY + healthHeight);
-                healthFillGradient.addColorStop(0, "rgba(255, 100, 100, 1)");
-                healthFillGradient.addColorStop(0.5, "rgba(180, 30, 30, 1)");
-                healthFillGradient.addColorStop(1, "rgba(255, 100, 100, 1)");
+            // Draw health layers with chrome appearance - 4 segments for Aliza
+            for (let i = 0; i < 4; i++) {
+                // Create chrome-style background for segment
+                const segmentX = x + 80 + (i * 30);
+                const segmentY = y - 15;
+                const segmentWidth = 25;
+                const segmentHeight = 20;
                 
-                this.ctx.fillStyle = healthFillGradient;
-                this.ctx.fillRect(healthX, healthY, healthWidth, healthHeight);
+                // Background gradient (dark gray to gray)
+                const bgGradient = this.ctx.createLinearGradient(segmentX, segmentY, segmentX, segmentY + segmentHeight);
+                bgGradient.addColorStop(0, "#444");
+                bgGradient.addColorStop(0.5, "#333");
+                bgGradient.addColorStop(1, "#222");
                 
-                // Add highlight effect
-                this.ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-                this.ctx.fillRect(healthX, healthY, healthWidth, healthHeight / 3);
+                this.ctx.fillStyle = bgGradient;
+                this.ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight);
+                
+                // If segment is active, fill with chrome-style health gradient
+                if (i < player.health) {
+                    const fillGradient = this.ctx.createLinearGradient(segmentX, segmentY, segmentX, segmentY + segmentHeight);
+                    fillGradient.addColorStop(0, "rgba(255, 100, 100, 1)");
+                    fillGradient.addColorStop(0.5, "rgba(180, 30, 30, 1)");
+                    fillGradient.addColorStop(1, "rgba(255, 100, 100, 1)");
+                    
+                    this.ctx.fillStyle = fillGradient;
+                    this.ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight);
+                    
+                    // Add highlight effect at the top
+                    this.ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+                    this.ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight / 3);
+                }
+                
+                // Add dark gray outline
+                this.ctx.strokeStyle = "#444";
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(segmentX, segmentY, segmentWidth, segmentHeight);
             }
+        } else if (character === 'shinshi') {
+            // Shinshi: Show health segments like Dere, but with 4 segments
+            this.ctx.fillStyle = "#33ff66";
+            this.ctx.fillText(`Health: `, x, y);
+            this.ctx.shadowBlur = 0; // Turn off shadow for bars
             
-            // Add dark gray outline
-            this.ctx.strokeStyle = "#444";
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(healthX, healthY, healthWidth, healthHeight);
+            // Draw health layers with chrome appearance - 4 segments for Shinshi
+            for (let i = 0; i < 4; i++) {
+                // Create chrome-style background for segment
+                const segmentX = x + 80 + (i * 30);
+                const segmentY = y - 15;
+                const segmentWidth = 25;
+                const segmentHeight = 20;
+                
+                // Background gradient (dark gray to gray)
+                const bgGradient = this.ctx.createLinearGradient(segmentX, segmentY, segmentX, segmentY + segmentHeight);
+                bgGradient.addColorStop(0, "#444");
+                bgGradient.addColorStop(0.5, "#333");
+                bgGradient.addColorStop(1, "#222");
+                
+                this.ctx.fillStyle = bgGradient;
+                this.ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight);
+                
+                // If segment is active, fill with chrome-style health gradient
+                if (i < player.health) {
+                    const fillGradient = this.ctx.createLinearGradient(segmentX, segmentY, segmentX, segmentY + segmentHeight);
+                    fillGradient.addColorStop(0, "rgba(255, 100, 100, 1)");
+                    fillGradient.addColorStop(0.5, "rgba(180, 30, 30, 1)");
+                    fillGradient.addColorStop(1, "rgba(255, 100, 100, 1)");
+                    
+                    this.ctx.fillStyle = fillGradient;
+                    this.ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight);
+                    
+                    // Add highlight effect at the top
+                    this.ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+                    this.ctx.fillRect(segmentX, segmentY, segmentWidth, segmentHeight / 3);
+                }
+                
+                // Add dark gray outline
+                this.ctx.strokeStyle = "#444";
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeRect(segmentX, segmentY, segmentWidth, segmentHeight);
+            }
         }
         
-        // Power level indicator with LCD and chrome style
+        // Power level indicator with LCD and chrome style for all characters
         this.ctx.shadowColor = "#33ff66";
         this.ctx.shadowBlur = 5;
         this.ctx.fillStyle = "#33ff66";
@@ -1179,6 +1336,11 @@ class GameRenderer {
             if (this.isPointInRect(x, y, alizaBtn)) {
                 return { type: 'character', value: 'aliza' };
             }
+            
+            const shinshiBtn = this.uiElements.characterSelect.shinshiButton;
+            if (this.isPointInRect(x, y, shinshiBtn)) {
+                return { type: 'character', value: 'shinshi' };
+            }
         }
         
         // Game over screen buttons
@@ -1283,5 +1445,50 @@ class GameRenderer {
         // Store the canvas element as the sprite
         this.sprites[name] = canvas;
         console.log(`Created fallback sprite for: ${name}`);
+    }
+    
+    /**
+     * Render player beams (for Shinshi character)
+     * @param {Array} beams - Array of beam objects
+     */
+    renderPlayerBeams(beams) {
+        if (!beams || beams.length === 0) {
+            return;
+        }
+        
+        for (const beam of beams) {
+            // Get the appropriate beam sprite based on beam level
+            const spriteKey = `shinbeam${beam.level}`;
+            const sprite = this.sprites[spriteKey];
+            
+            if (sprite && sprite.complete) {
+                // Calculate beam length to reach from player to top of screen
+                const beamLength = this.canvas.height; // Use full canvas height
+                const sourceHeight = sprite.height;
+                
+                // Draw the beam from player position to top of screen
+                // Note: We're not squishing the beam, just stretching it to reach the top
+                this.ctx.drawImage(
+                    sprite,
+                    0,                  // Source X
+                    0,                  // Source Y
+                    sprite.width,       // Source width
+                    sourceHeight,       // Source height
+                    beam.x - beam.width/2,  // Destination X (centered on beam.x)
+                    -this.canvas.height/2,  // Destination Y (top of canvas)
+                    beam.width,         // Destination width
+                    beamLength          // Destination height
+                );
+            } else {
+                // Fallback rendering with color
+                this.ctx.fillStyle = '#88FFFF';
+                this.ctx.fillRect(
+                    beam.x - beam.width/2,
+                    -this.canvas.height/2,
+                    beam.width,
+                    this.canvas.height
+                );
+            }
+        }
     }
 }
