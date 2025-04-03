@@ -149,14 +149,11 @@ class MonsterLogic {
                     // Beam stretches vertically from hand to top of screen
                     beamDirection: 'vertical',
                     special: {
-                        type: 'horizontal-beams',
-                        damage: 10,
-                        count: 5,  // Creates 5 horizontal beams
+                        type: 'vertical-beams',
+                        damage: 15,
+                        count: 5,  // Creates 5 vertical beams
                         cooldown: 10000, // 10 second cooldown
-                        sprites: [
-                            'shinspecialbeamleftside',
-                            'shinspecialbeamrightside'
-                        ],
+                        sprite: 'shinbeam3', // Using the thickest beam graphic
                         name: 'Full Screen Beam'
                     }
                 },
@@ -1698,7 +1695,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
             return {
                 x: x,
                 y: y,
-                dx: dx,
+                dx:dx,
                 dy: dy,
                 width: 30 * size,
                 height: 30 * size,

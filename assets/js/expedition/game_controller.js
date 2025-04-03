@@ -1347,24 +1347,27 @@ currentRound: 1,
     }
 
     /**
-     * Creates Shinshi's special attack with horizontal beams
+     * Creates Shinshi's special attack with vertical beams
      */
     createShinshiSpecialAttack() {
         this.projectiles.specialBeams = this.projectiles.specialBeams || [];
-        const screenHeight = this.canvas.height;
-        const beamHeight = 40;
         
-        // Create 5 horizontal beams across the screen
+        // Default dimensions if canvas is not available
+        const screenWidth = this.canvas ? this.canvas.width : 800;
+        const screenHeight = this.canvas ? this.canvas.height : 600;
+        const beamWidth = 60; // Width of each vertical beam
+        
+        // Create 5 vertical beams distributed across the screen
         for (let i = 0; i < 5; i++) {
-            const yPosition = (i * screenHeight / 5) + (beamHeight / 2);
+            const xPosition = (i * screenWidth / 5) + (beamWidth / 2);
             
             this.projectiles.specialBeams.push({
-                x: 0,
-                y: yPosition,
-                width: this.canvas.width,
-                height: beamHeight,
-                damage: 10,
-                direction: i % 2 === 0 ? 'right' : 'left', // Alternating direction for visual effect
+                x: 0, 
+                y: 0, // Start at top of screen
+                width: 120,
+                height: screenHeight,
+                damage: 15,
+                isVertical: true, // Explicitly mark as vertical beam
                 createdAt: Date.now()
             });
         }
