@@ -37,10 +37,12 @@ class ProjectileManager {
             projectile.x += projectile.vx * (deltaTime / 16);
             projectile.y += projectile.vy * (deltaTime / 16);
             
-            // FIXED: Make boundary values much more extreme to ensure projectiles
-            // reach all parts of the screen before being removed
-            if (projectile.y < -2000 || projectile.y > 2000 || 
-                projectile.x < -1000 || projectile.x > 1000) {
+            // FIXED: Using much more generous boundaries to ensure projectiles
+            // from all parts of the screen (especially top half) are visible
+            // By using canvas dimensions we ensure all projectiles within view are kept
+            const canvas = this.game.canvas || { width: 800, height: 960 };
+            if (projectile.y < -canvas.height || projectile.y > canvas.height * 2 || 
+                projectile.x < -canvas.width || projectile.x > canvas.width * 2) {
                 this.playerProjectiles.splice(i, 1);
             }
         }
@@ -63,9 +65,12 @@ class ProjectileManager {
                 projectile.rotation = (projectile.rotation || 0) + projectile.rotationSpeed * (deltaTime / 16);
             }
             
-            // Check if out of bounds
-            if (projectile.y < -800 || projectile.y > 1060 || 
-                projectile.x < -100 || projectile.x > 900) {
+            // FIXED: Much more generous boundary conditions to ensure projectiles from all parts of screen
+            // are visible. This especially helps with projectiles starting above the center-Y which often
+            // have negative Y coordinates in game space.
+            const canvas = this.game.canvas || { width: 800, height: 960 };
+            if (projectile.y < -canvas.height * 2 || projectile.y > canvas.height * 2 || 
+                projectile.x < -canvas.width * 2 || projectile.x > canvas.width * 2) {
                 this.enemyProjectiles.splice(i, 1);
             }
         }

@@ -69,11 +69,11 @@ class MonsterLogic {
                     projectileSelection: 'random',
                     // Power level upgrades (1-5)
                     powerLevels: {
-                        1: { projectiles: 1, damage: 10 },
-                        2: { projectiles: 2, damage: 10 },
-                        3: { projectiles: 3, damage: 10 },
-                        4: { projectiles: 3, damage: 15 }, // Level 4: Same as 3 but higher damage
-                        5: { projectiles: 4, damage: 15 }  // Level 5: 4 projectiles with higher damage
+                        1: { projectiles: 1, damage: 1 },
+                        2: { projectiles: 2, damage: 2 },
+                        3: { projectiles: 3, damage: 3 },
+                        4: { projectiles: 3, damage: 4 }, // Level 4: Same as 3 but higher damage
+                        5: { projectiles: 4, damage: 5 }  // Level 5: 4 projectiles with higher damage
                     },
                     special: {
                         type: 'screen-clear',
@@ -184,7 +184,7 @@ class MonsterLogic {
             maxEnemies: 15,     // Increased from 6 to 15
             enemyTypes: ['darkling2', 'darkling3', 'darkling4'], // Basic enemy types for flybys
             possibleHeights: [60, 80, 100, 120, 140, 160, 180, 200], // Added more height options
-            speed: 0.0001,       // Changed from 0.1 to 0.001 for much slower movement
+            speed: 0.00001,       // Changed from 0.1 to 0.001 for much slower movement
             spacing: 30         // Reduced from 40 to create tighter groups
         };
     }
@@ -290,7 +290,7 @@ class MonsterLogic {
                                    row === 3 ? 'darkling3' : 'darkling2';
                         }),
                         spacing: { x: 65, y: 40 }, // Reduced spacing slightly
-                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 430)
+                        startPosition: { x: 0, y: -300 }, // Adjusted Y position (-225 from previous 430)
                         waveFactor: { amplitude: 60, frequency: 0.1 },
                         movementPattern: 'wave-attack'
                     },
@@ -300,7 +300,7 @@ class MonsterLogic {
                         enemies: Array(35).fill().map((_, i) => 
                             ['darkling5', 'darkling6', 'darkling4','darkling1','darkling2','darkling3' ][i % 6]),
                         spacing: { outer: 200, inner: 100 }, // Increased spacing
-                        startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 450)
+                        startPosition: { x: 0, y: -300 }, // Adjusted Y position (-225 from previous 450)
                         movementPattern: 'star-pulse'
                     },
                     {
@@ -360,7 +360,7 @@ class MonsterLogic {
                         formation: 'round2-boss',
                         boss: { 
                             type: 'darklingboss2', 
-                            position: { x: 0, y: 245 }, // Adjusted Y position (-225 from previous 470)
+                            position: { x: 0, y: -245 }, // Adjusted Y position (-225 from previous 470)
                             health: 150, // Increased health for more challenging battle
                             hasShield: true, // New shield mechanic
                             phase: 1, // Boss starts in phase 1
@@ -368,10 +368,10 @@ class MonsterLogic {
                         },
                         guardians: [
                             // Four fixed guardian positions symmetrically around the boss
-                            { type: 'darkling7', position: { x: -100, y: 195 } }, // Adjusted Y position (-225 from previous 420)
-                            { type: 'darkling7', position: { x: 100, y: 195 } },  // Adjusted Y position (-225 from previous 420)
-                            { type: 'darkling7', position: { x: -100, y: 295 } }, // Adjusted Y position (-225 from previous 520)
-                            { type: 'darkling7', position: { x: 100, y: 295 } }   // Adjusted Y position (-225 from previous 520)
+                            { type: 'darkling7', position: { x: -100, y: -195 } }, // Adjusted Y position (-225 from previous 420)
+                            { type: 'darkling7', position: { x: 100, y: -195 } },  // Adjusted Y position (-225 from previous 420)
+                            { type: 'darkling7', position: { x: -100, y: -295 } }, // Adjusted Y position (-225 from previous 520)
+                            { type: 'darkling7', position: { x: 100, y: -295 } }   // Adjusted Y position (-225 from previous 520)
                         ],
                         minions: [
                             // Orbiting minions - first wave
@@ -394,7 +394,7 @@ class MonsterLogic {
                         enemies: Array(40).fill().map((_, i) => 
                             i % 2 === 0 ? 'darkling8' : 'darkling7'),
                         spacing: { angle: 12, radiusStep: 12 }, // Reduced spacing to fit more enemies
-                        startPosition: { x: 0, y: 225 }, // Adjusted Y position (-225 from previous 450)
+                        startPosition: { x: 0, y: -450 }, // Adjusted Y position (-225 from previous 450)
                         growFactor: 0.3,
                         movementPattern: 'spiral-expand'
                     },
@@ -404,17 +404,17 @@ class MonsterLogic {
                         seed: {
                             enemies: ['darkling10', 'darkling10', 'darkling10', 'darkling10', 'darkling10'], // Added 2 more seed enemies
                             positions: [
-                                { x: -150, y: 205 }, // Adjusted Y position (-225 from previous 430)
-                                { x: -75, y: 195 },  // Adjusted Y position (-225 from previous 390)
-                                { x: 0, y: 185 },    // Adjusted Y position (-225 from previous 370)
-                                { x: 75, y: 195 },   // Adjusted Y position (-225 from previous 390)
-                                { x: 150, y: 205 }   // Adjusted Y position (-225 from previous 430)
+                                { x: -150, y: -205 }, // Adjusted Y position (-225 from previous 430)
+                                { x: -75, y: -195 },  // Adjusted Y position (-225 from previous 390)
+                                { x: 0, y: -185 },    // Adjusted Y position (-225 from previous 370)
+                                { x: 75, y: -195 },   // Adjusted Y position (-225 from previous 390)
+                                { x: 150, y: -205 }   // Adjusted Y position (-225 from previous 430)
                             ]
                         },
                         children: {
                             enemies: Array(50).fill().map(() => // Increased from 32 to 50
                                 Math.random() < 0.3 ? 'darkling8' : 'darkling7'),
-                            offset: { x: [-40, -20, 0, 20, 40], y: [30, 30, 30, 30, 30] }
+                            offset: { x: [-40, -20, 0, 20, 40], y: [-30, -30, -30, -30, -30] }
                         },
                         movementPattern: 'fractal-collapse'
                     },
@@ -426,25 +426,25 @@ class MonsterLogic {
                                 enemies: Array(18).fill('darkling10'), // Tripled from 6
                                 radius: 100,
                                 rotationSpeed: 0.001,
-                                center: { x: -60, y: 225 } // Adjusted Y position (-225 from previous 450)
+                                center: { x: -60, y: -225 } // Adjusted Y position (-225 from previous 450)
                             },
                             {
                                 enemies: Array(18).fill('darkling10'), // Tripled from 6
                                 radius: 100,
                                 rotationSpeed: -0.001,
-                                center: { x: 60, y: 225 } // Adjusted Y position (-225 from previous 450)
+                                center: { x: 60, y: -225 } // Adjusted Y position (-225 from previous 450)
                             },
                             {
                                 enemies: Array(12).fill('darkling7'), // Quadrupled from 3
                                 radius: 40,
                                 rotationSpeed: 0.002,
-                                center: { x: 0, y: 225 } // Adjusted Y position (-225 from previous 450)
+                                center: { x: 0, y: -225 } // Adjusted Y position (-225 from previous 450)
                             },
                             { // Added a fourth ring
                                 enemies: Array(24).fill('darkling8'),
                                 radius: 150,
                                 rotationSpeed: 0.0015,
-                                center: { x: 0, y: 225 } // Adjusted Y position (-225 from previous 450)
+                                center: { x: 0, y: -225 } // Adjusted Y position (-225 from previous 450)
                             }
                         ],
                         movementPattern: 'cosmic-dance'
@@ -455,31 +455,31 @@ class MonsterLogic {
                         core: {
                             enemies: Array(10).fill('darkling7'), // Doubled from 5
                             positions: [
-                                { x: 0, y: 100 }, // Center of formation
-                                { x: -60, y: 120 }, // Symmetrically positioned
-                                { x: 60, y: 120 },
-                                { x: -120, y: 140 },
-                                { x: 120, y: 140 },
-                                { x: -40, y: 80 },
-                                { x: 40, y: 80 },
-                                { x: -80, y: 140 },
-                                { x: 80, y: 140 },
-                                { x: 0, y: 160 }
+                                { x: 0, y: -400 }, // Center of formation
+                                { x: -60, y: -420 }, // Symmetrically positioned
+                                { x: 60, y: -420 },
+                                { x: -120, y: -440 },
+                                { x: 120, y: -440 },
+                                { x: -40, y: -380 },
+                                { x: 40, y: -380 },
+                                { x: -80, y: -440 },
+                                { x: 80, y: -440 },
+                                { x: 0, y: -460 }
                             ]
                         },
                         turrets: [
-                            { type: 'darkling8', position: { x: -160, y: 80 } },
-                            { type: 'darkling8', position: { x: 160, y: 80 } },
-                            { type: 'darkling8', position: { x: -140, y: 120 } }, // Added 2 more turrets
-                            { type: 'darkling8', position: { x: 140, y: 120 } }
+                            { type: 'darkling8', position: { x: -160, y: -500 } },
+                            { type: 'darkling8', position: { x: 160, y: -500 } },
+                            { type: 'darkling8', position: { x: -140, y: -520 } }, // Added 2 more turrets
+                            { type: 'darkling8', position: { x: 140, y: -520 } }
                         ],
                         defenders: {
                             formation: 'patrol',
                             enemies: Array(18).fill('darkling10'), // Tripled from 6
                             paths: [
-                                { points: [{ x: -140, y: 40 }, { x: 140, y: 40 }], speed: 0.5 },
-                                { points: [{ x: -100, y: 180 }, { x: 100, y: 180 }], speed: 0.3 },
-                                { points: [{ x: -120, y: 120 }, { x: 120, y: 120 }], speed: 0.4 } // Added third patrol path
+                                { points: [{ x: -140, y: 140 }, { x: 140, y: -640 }], speed: 0.5 },
+                                { points: [{ x: -100, y: 280 }, { x: 100, y: -450 }], speed: 0.3 },
+                                { points: [{ x: -120, y: 220 }, { x: 120, y: -220 }], speed: 0.4 } // Added third patrol path
                             ]
                         },
                         movementPattern: 'fortress-defense'
@@ -493,14 +493,14 @@ class MonsterLogic {
                                     Math.random() < 0.7 ? 'darkling8' : 'darkling10'),
                                 radius: 180,
                                 density: 0.7,
-                                center: { x: 0, y: 120 } // Centered with slight vertical offset
+                                center: { x: 0, y: -220 } // Centered with slight vertical offset
                             },
                             { // Added a second cluster
                                 enemies: Array(20).fill().map(() =>
                                     Math.random() < 0.4 ? 'darkling7' : 'darkling10'),
                                 radius: 100,
                                 density: 0.6,
-                                center: { x: 0, y: 60 } // Centered with slight vertical offset
+                                center: { x: 0, y: -160 } // Centered with slight vertical offset
                             }
                         ],
                         pulseRate: { min: 0.7, max: 1.3, speed: 0.0005 },
@@ -514,21 +514,21 @@ class MonsterLogic {
                                 formation: 'pentagon',
                                 enemies: Array(30).fill('darkling8'), // Tripled from 10
                                 radius: 150, // Increased radius to fit more enemies
-                                position: { x: 0, y: 100 }, // Centered on screen
+                                position: { x: 0, y: -200 }, // Centered on screen
                                 duration: 6000
                             },
                             {
                                 formation: 'star',
                                 enemies: Array(30).fill('darkling10'), // Tripled from 10
                                 radius: { inner: 100, outer: 200 }, // Increased radius
-                                position: { x: 0, y: 100 }, // Centered on screen
+                                position: { x: 0, y: -200 }, // Centered on screen
                                 duration: 6000
                             },
                             {
                                 formation: 'circle',
                                 enemies: Array(30).fill('darkling7'), // Tripled from 10
                                 radius: 170, // Increased radius
-                                position: { x: 0, y: 100 }, // Centered on screen
+                                position: { x: 0, y: -200 }, // Centered on screen
                                 duration: 6000
                             }
                         ],
@@ -542,14 +542,14 @@ class MonsterLogic {
                             {
                                 enemies: Array(16).fill().map((_, i) => // Doubled from 8
                                     i % 2 === 0 ? 'darkling10' : 'darkling8'),
-                                center: { x: -100, y: 100 }, // Symmetrical position
+                                center: { x: -100, y: -100 }, // Symmetrical position
                                 radius: { start: 30, end: 120 },
                                 spiral: { turns: 1.5, direction: 1 }
                             },
                             {
                                 enemies: Array(16).fill().map((_, i) => // Doubled from 8
                                     i % 2 === 0 ? 'darkling10' : 'darkling8'),
-                                center: { x: 100, y: 100 }, // Symmetrical position
+                                center: { x: 100, y: -100 }, // Symmetrical position
                                 radius: { start: 30, end: 120 },
                                 spiral: { turns: 1.5, direction: -1 }
                             }
@@ -561,58 +561,62 @@ class MonsterLogic {
                         movementPattern: 'vortex-collapse'
                     },
                     {
-                        // Wave 8: Final boss with phased dynamic defenses - Tripled minion counts
+                        // Wave 8: Final boss with new tougher vanguard enemies - replaced previous minions
                         formation: 'final-bastion',
-                        boss: { type: 'darklingboss3', position: { x: 0, y: 120 } }, // Centered boss
+                        boss: { type: 'darklingboss3', position: { x: 0, y: -220 } }, // Centered boss
                         phases: [
                             {
-                                // Phase 1: Shielding formation - Tripled enemy count
+                                // Phase 1: Shielding formation with mini-boss entourage (darkling11 - using boss1's attack pattern)
                                 formation: 'shield-wall',
-                                enemies: Array(18).fill('darkling10'), // Tripled from 6
+                                enemies: Array(6).fill('darkling11'), // Using darkling11 instead of darkling10
                                 positions: [
-                                    { x: -120, y: 70 }, { x: -80, y: 60 }, { x: -40, y: 50 }, 
-                                    { x: 0, y: 40 }, { x: 40, y: 50 }, { x: 80, y: 60 },
-                                    { x: 120, y: 70 }, { x: -100, y: 100 }, { x: -50, y: 90 },
-                                    { x: 0, y: 80 }, { x: 50, y: 90 }, { x: 100, y: 100 },
-                                    { x: -60, y: 130 }, { x: -20, y: 120 }, { x: 20, y: 120 },
-                                    { x: 60, y: 130 }, { x: 0, y: 160 }, { x: 0, y: 180 }
+                                    { x: -120, y: -170 }, { x: -80, y: -160 }, 
+                                    { x: 0, y: -140 }, { x: 40, y: -150 }, 
+                                    { x: 120, y: -170 }, { x: 0, y: -180 }
                                 ],
                                 duration: 20000
                             },
                             {
-                                // Phase 2: Attack formation - Tripled squad sizes
+                                // Phase 2: Attack formation with mini-boss squads (darkling12 - using boss2's attack pattern)
                                 formation: 'attack-squad',
                                 squads: [
                                     {
-                                        enemies: Array(9).fill('darkling7'), // Tripled from 3
+                                        enemies: Array(3).fill('darkling12'), // Using darkling12 instead of darkling7
                                         formation: 'triangle',
-                                        radius: 90, // Increased radius
-                                        center: { x: -120, y: 100 } // Symmetrical position
+                                        radius: 90,
+                                        center: { x: -120, y: 100 }
                                     },
                                     {
-                                        enemies: Array(9).fill('darkling7'), // Tripled from 3
+                                        enemies: Array(3).fill('darkling12'), // Using darkling12 instead of darkling7
                                         formation: 'triangle',
-                                        radius: 90, // Increased radius
-                                        center: { x: 120, y: 100 } // Symmetrical position
+                                        radius: 90,
+                                        center: { x: 120, y: 100 }
                                     },
-                                    { // Added a third squad
-                                        enemies: Array(12).fill('darkling8'),
+                                    {
+                                        enemies: Array(4).fill('darkling13'), // Using darkling13 instead of darkling8
                                         formation: 'diamond',
                                         radius: 100,
-                                        center: { x: 0, y: 60 } // Centered with vertical offset
+                                        center: { x: 0, y: 60 }
                                     }
                                 ],
                                 duration: 15000
                             },
                             {
-                                // Phase 3: Desperate defense - Tripled enemy count
+                                // Phase 3: Desperate defense - mix of all three new vanguard enemy types
                                 formation: 'desperation',
-                                enemies: Array(36).fill().map(() => // Tripled from 12
-                                    Math.random() < 0.5 ? 'darkling8' : 'darkling10'),
+                                enemies: Array(18).fill().map((_, i) => 
+                                    i % 3 === 0 ? 'darkling11' : (i % 3 === 1 ? 'darkling12' : 'darkling13')),
                                 pattern: 'chaos',
-                                boundary: { x: [-200, 200], y: [60, 180] }, // Centered boundary
+                                boundary: { x: [-200, 200], y: [60, 180] },
                                 duration: 25000
                             }
+                        ],
+                        // Add flanking guardians directly with the boss
+                        guardians: [
+                            { type: 'darkling11', position: { x: -150, y: -180 } },
+                            { type: 'darkling11', position: { x: 150, y: -180 } },
+                            { type: 'darkling12', position: { x: -100, y: -150 } },
+                            { type: 'darkling12', position: { x: 100, y: -150 } }
                         ],
                         movementPattern: 'final-stand'
                     }
@@ -692,23 +696,67 @@ class MonsterLogic {
      */
     getInitialHealth(type) {
         const healthMap = {
-            'darklingboss1': 50,  // Increased from 25
-            'darklingboss2': 250, // Increased from 100
-            'darklingboss3': type === 'darklingboss3' ? 4000 : 400, // Final boss unchanged
-            'darklingboss4': 100, // Increased from 50
-            'darkling1': 1,
-            'darkling2': 1,
-            'darkling3': 1,
+            'darklingboss1': 50,
+            'darklingboss2': 250,
+            'darklingboss3': type === 'darklingboss3' ? 4000 : 400,
             'darkling4': 3,
             'darkling5': 2,
             'darkling6': 2,
             'darkling7': 10,
             'darkling8': 3,
             'darkling9': 1,
-            'darkling10': 4
+            'darkling10': 4,
+            'darkling11': 15, // Mini boss 1 - tougher than regular enemies
+            'darkling12': 20, // Mini boss 2 - even tougher
+            'darkling13': 8   // Elite enemy - tougher than regular but not as tough as mini bosses
         };
-        
         return healthMap[type] || 1; // Default to 1 if type not found
+    }
+
+    /**
+     * Get individual enemy movement pattern
+     * @param {string} type - The type of enemy
+     * @param {number} x - Base X position
+     * @param {number} y - Base Y position
+     * @returns {Function} Movement function
+     */
+    getMovementPattern(type, x, y) {
+        const randomOffset = Math.random() * Math.PI * 2;
+        const reverseDirection = Math.random() > 0.5 ? -1 : 1;
+        const phaseOffset = Math.random() * 1000;
+        const verticalOffset = Math.random() * 50 - 25;
+        const amplitudeVariation = 0.8 + Math.random() * 0.4;
+        
+        return t => {
+            // Basic sine wave pattern with vertical offset and amplitude variation
+            const x = Math.sin((t + phaseOffset) * 0.001) * 100 * amplitudeVariation * reverseDirection;
+            const y = 100 + verticalOffset;
+
+            // Special patterns for certain enemy types
+            if (type === 'darkling11') {
+                // Uses boss1's pattern but 50% slower
+                return {
+                    x: x * 0.5,
+                    y: y + Math.sin((t + phaseOffset) * 0.0005) * 30
+                };
+            }
+            if (type === 'darkling12') {
+                // Uses boss2's pattern but 50% slower
+                return {
+                    x: Math.sin((t + phaseOffset) * 0.001) * 60,
+                    y: y + Math.cos((t + phaseOffset) * 0.0006) * 25
+                };
+            }
+            if (type === 'darkling13') {
+                // Wave 3 monster - more aggressive pattern
+                return {
+                    x: x * 1.2,
+                    y: y + Math.sin((t + phaseOffset) * 0.002) * 40
+                };
+            }
+
+            return { x, y };
+        };
     }
 
     /**
@@ -719,235 +767,266 @@ class MonsterLogic {
      * @param {Object} playerPosition - Player position {x, y}
      * @returns {Array} Array of projectile objects
      */
-    createProjectiles(type, x, y, playerPosition) {
+    createProjectiles(type, x, y, playerPosition = null) {
         const projectiles = [];
         
-        // No projectiles if player position is not available for targeted shots
-        if (!playerPosition) {
-            playerPosition = { x: x, y: y + 300 }; // Default target below the enemy
+        // Helper function to create a projectile with an angle
+        const createProjectile = (angle, speed = 3, size = 1) => {
+            const rad = angle * Math.PI / 180;
+            const dx = Math.cos(rad) * speed;
+            const dy = Math.sin(rad) * speed;
+            
+            // Select appropriate sprite based on enemy type and speed
+            let sprite;
+            let shouldRotate = false;
+            
+            // For bosses or high-level enemies, use the rotating projectile
+            if (type.includes('boss') || ['darkling7', 'darkling8', 'darkling10'].includes(type)) {
+                sprite = 'darklingshot7';
+                shouldRotate = true;
+            }
+            // For faster projectiles
+            else if (speed > 4) {
+                sprite = 'darklingshot5';
+            }
+            // For more advanced enemies
+            else if (['darkling4', 'darkling5', 'darkling6'].includes(type)) {
+                sprite = Math.random() < 0.5 ? 'darklingshot4' : 'darklingshot3';
+            }
+            // For basic enemies
+            else {
+                sprite = Math.random() < 0.5 ? 'darklingshot1' : 'darklingshot2';
+            }
+            
+            // Special case for special attacks
+            if (type === 'darklingboss3' || (type === 'darklingboss2' && Math.random() < 0.3)) {
+                sprite = 'darklingshotspecial';
+                shouldRotate= true;
+            }
+            
+            return {
+                x: x,
+                y: y,
+                dx: dx,
+                dy: dy,
+                width: 30 * size,
+                height: 30 * size,
+                sprite: sprite,
+                rotate: shouldRotate,
+                rotationSpeed: shouldRotate ? (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                rotation: 0
+            };
+        };
+        
+        // Helper for creating a targeted projectile
+        const createTargetedProjectile = (speed = 3, size = 1) => {
+            if (!playerPosition) return null;
+            
+            const dx = playerPosition.x - x;
+            const dy = playerPosition.y - y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            // Normalize and scale by speed
+            const ndx = (dx / dist) * speed;
+            const ndy = (dy / dist) * speed;
+            
+            // Select appropriate sprite for targeted shots
+            let sprite;
+            let shouldRotate = false;
+            
+            if (type.includes('boss')) {
+                sprite = 'darklingshot7';
+                shouldRotate = true;
+            } else if (type === 'darkling10' || type === 'darkling8') {
+                sprite = 'darklingshot4';
+            } else if (type === 'darkling7') {
+                sprite = 'darklingshot6';
+            } else {
+                sprite = 'darklingshot3';
+            }
+            
+            return {
+                x: x,
+                y: y,
+                dx: ndx,
+                dy: ndy,
+                width: 30 * size,
+                height: 30 * size,
+                sprite: sprite,
+                rotate: shouldRotate,
+                rotationSpeed: shouldRotate ? (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                rotation: 0
+            };
+        };
+        
+        // Some enemies don't shoot
+        if (['darkling1', 'darkling9'].includes(type)) {
+            return projectiles;
         }
         
-        // Calculate angle to player for aimed shots
-        const dx = playerPosition.x - x;
-        const dy = playerPosition.y - y;
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        
-        // Base projectile speed (can be modified per enemy type)
+        // Define baseSpeed for all enemy projectiles
         const baseSpeed = 3;
         
-        // Boss specific logic first
-        if (type.includes('boss')) {
-            if (type === 'darklingboss1') {
-                // Triple spread shot for first boss
-                for (let i = -1; i <= 1; i++) {
-                    const spreadAngle = angle + (i * Math.PI / 10);
+        switch(type) {
+            case 'darkling2':
+            case 'darkling3':
+                // Simple single shot
+                projectiles.push(createProjectile(90, 3));
+                break;
+                
+            case 'darkling4':
+                // Two angled shots
+                projectiles.push(createProjectile(75, 3));
+                projectiles.push(createProjectile(105, 3));
+                break;
+                
+            case 'darkling5':
+            case 'darkling6':
+                // Diagonal shots
+                projectiles.push(createProjectile(75, 3.5));
+                projectiles.push(createProjectile(105, 3.5));
+                break;
+                
+            case 'darkling7':
+                // Wide spread
+                for (let angle = 75; angle <= 105; angle += 15) {
+                    projectiles.push(createProjectile(angle, 3.5));
+                }
+                break;
+                
+            case 'darkling8':
+                // Two precise shots
+                projectiles.push(createProjectile(85, 4));
+                projectiles.push(createProjectile(95, 4));
+                break;
+                
+            case 'darkling10':
+                // Random pattern with multiple options
+                const patterns = [
+                    // Pattern 1: Single fast shot
+                    () => projectiles.push(createProjectile(90, 5)),
+                    
+                    // Pattern 2: Three-way spread
+                    () => {
+                        for (let angle = 75; angle <= 105; angle += 15) {
+                            projectiles.push(createProjectile(angle, 3.2));
+                        }
+                    },
+                    
+                    // Pattern 3: Targeted shot if player position available
+                    () => {
+                        const targeted = createTargetedProjectile(4, 1.2);
+                        if (targeted) projectiles.push(targeted);
+                    }
+                ];
+                
+                // Choose a random pattern
+                patterns[Math.floor(Math.random() * patterns.length)]();
+                break;
+                
+            case 'darkling11':
+                // Uses boss1's attack pattern but 50% slower
+                // First boss: multiple shots in a V pattern
+                for (let angle = 75; angle <= 105; angle += 7.5) {
+                    projectiles.push(createProjectile(angle, 2, 1.0)); // Half speed (4→2)
+                }
+                break;
+                
+            case 'darkling12':
+                // Uses boss2's attack pattern but 50% slower
+                // Circular pattern with fewer projectiles (6 instead of 8) and half speed
+                for (let i = 0; i < 6; i++) {
+                    const wideAngle = (i * Math.PI / 3);
                     projectiles.push({
                         x: x,
                         y: y,
-                        dx: Math.cos(spreadAngle) * baseSpeed,
-                        dy: Math.sin(spreadAngle) * baseSpeed,
-                        width: 40,
-                        height: 40,
-                        damage: 1,
-                        sprite: 'bossShot1'
+                        dx: Math.cos(wideAngle) * baseSpeed * 0.4,
+                        dy: Math.sin(wideAngle) * baseSpeed * 0.4,
+                        width: 28,
+                        height: 28,
+                        sprite: 'darklingshot7',
+                        rotate: true,
+                        rotationSpeed: (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1),
+                        rotation: 0
                     });
                 }
-            } 
-            else if (type === 'darklingboss2') {
-                // Circle shot pattern for second boss (8 projectiles in all directions)
-                for (let i = 0; i < 8; i++) {
-                    const wideAngle = (i * Math.PI / 4);
+                
+                // Add a targeted projectile with half speed
+                if (playerPosition) {
+                    const targeted = createTargetedProjectile(2.25); // Half speed (4.5→2.25)
+                    if (targeted) projectiles.push(targeted);
+                }
+                break;
+                
+            case 'darkling13':
+                // Wave 3 monster - combination of darkling7 and darkling8 attacks
+                // Medium spread with 3 shots
+                for (let angle = 80; angle <= 100; angle += 10) {
+                    projectiles.push(createProjectile(angle, 3.5));
+                }
+                
+                // Add a targeted shot if player position is available
+                if (playerPosition) {
+                    const targeted = createTargetedProjectile(3.8);
+                    if (targeted) projectiles.push(targeted);
+                }
+                break;
+                
+            case 'darklingboss1':
+                // First boss: multiple shots in a V pattern
+                for (let angle = 75; angle <= 105; angle += 7.5) {
+                    projectiles.push(createProjectile(angle, 4, 1.2));
+                }
+                break;
+                
+            case 'darklingboss2':
+                // Simplified Round 2 boss: 3-way spread + 1 targeted shot
+                // No more phases or complex mechanics
+                for (let angle = 75; angle <= 105; angle += 15) {
+                    projectiles.push(createProjectile(angle, 4));
+                }
+                
+                // Add a targeted projectile
+                if (playerPosition) {
+                    const targeted = createTargetedProjectile(4.5);
+                    if (targeted) projectiles.push(targeted);
+                }
+                break;
+                
+            case 'darklingboss3':
+                // Final boss: heavy attack pattern
+                // Circle shot pattern (12 projectiles in all directions)
+                for (let i = 0; i < 12; i++) {
+                    const wideAngle = (i * Math.PI / 6);
                     projectiles.push({
                         x: x,
                         y: y,
                         dx: Math.cos(wideAngle) * baseSpeed * 0.8,
                         dy: Math.sin(wideAngle) * baseSpeed * 0.8,
-                        width: 30,
-                        height: 30,
-                        damage: 1,
-                        sprite: 'bossShot1'
-                    });
-                }
-            } 
-            else if (type === 'darklingboss3') {
-                // Queen (final boss) - Attack pattern varies based on a random roll
-                const patternType = Math.random();
-                
-                if (patternType < 0.33) {
-                    // Pattern 1: Dense wave pattern - more projectiles with narrower spread
-                    for (let i = -5; i <= 5; i++) {
-                        const shotAngle = angle + (i * Math.PI/18); // Narrower spread (10 degrees)
-                        projectiles.push({
-                            x: x,
-                            y: y,
-                            dx: Math.cos(shotAngle) * baseSpeed * 1.2,
-                            dy: Math.sin(shotAngle) * baseSpeed * 1.2,
-                            width: 40,
-                            height: 40,
-                            damage: 1,
-                            sprite: 'bossShot3'
-                        });
-                    }
-                }
-                else if (patternType < 0.66) {
-                    // Pattern 2: Spiral pattern - fewer projectiles with higher speed
-                    const spiralCount = 8; 
-                    const spiralSpacing = 2 * Math.PI / spiralCount;
-                    
-                    for (let i = 0; i < spiralCount; i++) {
-                        const spiralAngle = i * spiralSpacing;
-                        projectiles.push({
-                            x: x,
-                            y: y,
-                            dx: Math.cos(spiralAngle) * baseSpeed * 1.5,
-                            dy: Math.sin(spiralAngle) * baseSpeed * 1.5,
-                            width: 35,
-                            height: 35,
-                            damage: 1,
-                            sprite: 'bossShot2'
-                        });
-                    }
-                }
-                else {
-                    // Pattern 3: Targeted attack - precise shots aimed at player with higher damage
-                    // Main shot directly at player with high speed
-                    projectiles.push({
-                        x: x,
-                        y: y,
-                        dx: Math.cos(angle * Math.PI/180) * baseSpeed * 2.0,
-                        dy: Math.sin(angle * Math.PI/180) * baseSpeed * 2.0,
-                        width: 50,
-                        height: 50,
-                        damage: 2,
-                        sprite: 'bossShot3'
-                    });
-                    
-                    // Two flanking shots with slight angle offset
-                    projectiles.push({
-                        x: x,
-                        y: y,
-                        dx: Math.cos((angle - 15) * Math.PI/180) * baseSpeed * 1.8,
-                        dy: Math.sin((angle - 15) * Math.PI/180) * baseSpeed * 1.8,
                         width: 40,
                         height: 40,
-                        damage: 1,
-                        sprite: 'bossShot2'
+                        sprite: 'darklingshotspecial',
+                        rotate: true,
+                        rotationSpeed: (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1),
+                        rotation: 0
                     });
+                }
+                
+                // Add targeted projectiles
+                if (playerPosition) {
+                    const targeted1 = createTargetedProjectile(5, 1.5);
+                    if (targeted1) projectiles.push(targeted1);
                     
-                    projectiles.push({
-                        x: x,
-                        y: y,
-                        dx: Math.cos((angle + 15) * Math.PI/180) * baseSpeed * 1.8,
-                        dy: Math.sin((angle + 15) * Math.PI/180) * baseSpeed * 1.8,
-                        width: 40,
-                        height: 40,
-                        damage: 1,
-                        sprite: 'bossShot2'
-                    });
+                    // Add two flanking shots
+                    const angleToPlayer = Math.atan2(playerPosition.y - y, playerPosition.x - x) * 180 / Math.PI;
+                    projectiles.push(createProjectile(angleToPlayer - 15, 4.5, 1.2));
+                    projectiles.push(createProjectile(angleToPlayer + 15, 4.5, 1.2));
                 }
+                break;
                 
-                // Add a direct aimed shot with higher speed
-                projectiles.push({
-                    x: x,
-                    y: y,
-                    dx: Math.cos(angle * Math.PI/180) * baseSpeed * 1.7,
-                    dy: Math.sin(angle * Math.PI/180) * baseSpeed * 1.7,
-                    width: 50,
-                    height: 50,
-                    damage: 1,
-                    sprite: 'bossShot1'
-                });
-            }
-        } 
-        else {
-            // Regular enemy patterns
-            if (type === 'darkling1' || type === 'darkling2') {
-                // Basic enemies - single direct shot
-                projectiles.push({
-                    x: x,
-                    y: y,
-                    dx: Math.cos(angle * Math.PI/180) * baseSpeed,
-                    dy: Math.sin(angle * Math.PI/180) * baseSpeed,
-                    width: 20,
-                    height: 20,
-                    damage: 1,
-                    sprite: 'shot1'
-                });
-            } 
-            else if (type === 'darkling3' || type === 'darkling4') {
-                // Intermediate enemies - double shot spread
-                const spreadAngle = Math.PI / 15; // Narrow spread
-                
-                projectiles.push({
-                    x: x,
-                    y: y,
-                    dx: Math.cos(angle * Math.PI/180 - spreadAngle) * baseSpeed,
-                    dy: Math.sin(angle * Math.PI/180 - spreadAngle) * baseSpeed,
-                    width: 25,
-                    height: 25,
-                    damage: 1,
-                    sprite: 'shot1'
-                });
-                
-                projectiles.push({
-                    x: x,
-                    y: y,
-                    dx: Math.cos(angle * Math.PI/180 + spreadAngle) * baseSpeed,
-                    dy: Math.sin(angle * Math.PI/180 + spreadAngle) * baseSpeed,
-                    width: 25,
-                    height: 25,
-                    damage: 1,
-                    sprite: 'shot1'
-                });
-            } 
-            else if (type === 'darkling5' || type === 'darkling6') {
-                // Advanced enemies - triple shot
-                for (let i = -1; i <= 1; i++) {
-                    const spreadAngle = angle * Math.PI/180 + (i * Math.PI / 12);
-                    projectiles.push({
-                        x: x,
-                        y: y,
-                        dx: Math.cos(spreadAngle) * baseSpeed,
-                        dy: Math.sin(spreadAngle) * baseSpeed,
-                        width: 25,
-                        height: 25,
-                        damage: 1,
-                        sprite: 'shot1'
-                    });
-                }
-            } 
-            else if (type === 'darkling7' || type === 'darkling8' || type === 'darkling10') {
-                // Elite enemies - quad shot in wider spread
-                for (let i = -1.5; i <= 1.5; i++) {
-                    const spreadAngle = angle * Math.PI/180 + (i * Math.PI / 8);
-                    projectiles.push({
-                        x: x,
-                        y: y,
-                        dx: Math.cos(spreadAngle) * baseSpeed,
-                        dy: Math.sin(spreadAngle) * baseSpeed,
-                        width: 30,
-                        height: 30,
-                        damage: 1,
-                        sprite: 'shot1'
-                    });
-                }
-            } 
-            else if (type === 'darkling9') {
-                // Special enemy - arc shot (5 projectiles)
-                for (let i = -2; i <= 2; i++) {
-                    const spreadAngle = angle * Math.PI/180 + (i * Math.PI / 10);
-                    projectiles.push({
-                        x: x,
-                        y: y,
-                        dx: Math.cos(spreadAngle) * baseSpeed,
-                        dy: Math.sin(spreadAngle) * baseSpeed,
-                        width: 20,
-                        height: 20,
-                        damage: 1,
-                        sprite: 'shot1'
-                    });
-                }
-            }
+            default:
+                // Default - simple straight shot
+                projectiles.push(createProjectile(90, 3));
         }
         
         return projectiles;
@@ -961,7 +1040,7 @@ class MonsterLogic {
      */
     getShotCooldown(type, health) {
         const cooldownMap = {
-            'darklingboss1': 2400, // Reduced from 3000
+            'darklingboss1': 2000, // Reduced from 3000
             'darklingboss2': 1500, // Reduced from 2000
             'darklingboss3': 1200, // Final boss - reduced from 2000 to make more aggressive
             'darklingboss4': 3000, // Reduced from 3500
@@ -974,7 +1053,11 @@ class MonsterLogic {
             'darkling7': 1800,  // Previously 3000
             'darkling8': 1800,  // Previously 3000
             'darkling9': 2500,  // Previously didn't fire
-            'darkling10': 2000  // Previously 3000
+            'darkling10': 2000, // Previously 3000
+            // New vanguard enemies
+            'darkling11': 3600, // Uses boss1's attack pattern but 50% slower (2400 * 1.5)
+            'darkling12': 2250, // Uses boss2's attack pattern but 50% slower (1500 * 1.5)
+            'darkling13': 1600  // Similar to darkling7 but more aggressive
         };
         
         // If enemy is a boss with low health, reduce cooldown even further (more aggressive at low health)
@@ -1030,7 +1113,11 @@ class MonsterLogic {
             'darkling7': 50,
             'darkling8': 40,
             'darkling9': 15,
-            'darkling10': 45
+            'darkling10': 45,
+            'darkling11': 60, // Mini boss 1 - tougher than regular enemies
+            'darkling12': 60, // Mini boss 2 - even tougher
+            
+
         };
         
         return pointsMap[type] || 10;
@@ -1590,19 +1677,19 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 // Bosses move in special patterns even in formations
                 if (type === 'darklingboss2') {
                     // Simplified, more aggressive movement for Round 2 boss
-                    return t => ({
+                    return t => ( {
                         x: x + Math.sin(t * 0.002) * 120, // Wider horizontal movement
                         y: y + Math.sin(t * 0.001) * 20   // Subtle vertical movement
                     });
                 }
-                return t => ({
+                return t => ( {
                     x: x + Math.sin(t * 0.002) * 30,
                     y: y + Math.sin(t * 0.003) * 20
                 });
             }
             
             // Basic enemies in formations just have minor movement relative to their position
-            return t => ({
+            return t => ( {
                 x: x + Math.sin(t * 0.003 + (x * 0.01)) * 10,
                 y: y + Math.sin(t * 0.002 + (y * 0.01)) * 8
             });
@@ -1612,14 +1699,14 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
         // use more complex movement patterns from the original logic
         switch(type) {
             case 'darklingboss1':
-                return t => ({
+                return t => ( {
                     x: x + Math.sin(t * 0.002) * 120,
                     y: y + Math.sin(t * 0.001) * 60
                 });
                 
             case 'darklingboss2':
                 // More aggressive movement for Round 2 boss when not in formation too
-                return t => ({
+                return t => ( {
                     x: x + Math.sin(t * 0.002) * 120, // Faster, wider horizontal motion
                     y: y + Math.sin(t * 0.001) * 20   // Slight vertical movement
                 });
@@ -1640,7 +1727,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 
             default:
                 // Default movement for normal enemies not in formation
-                return t => ({
+                return t => ( {
                     x: x + Math.sin(t * 0.002) * 80,
                     y: y + Math.sin(t * 0.001) * 40
                 });
@@ -1695,7 +1782,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
             return {
                 x: x,
                 y: y,
-                dx:dx,
+                dx: dx,
                 dy: dy,
                 width: 30 * size,
                 height: 30 * size,
@@ -1743,7 +1830,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 sprite: sprite,
                 rotate: shouldRotate,
                 rotationSpeed: shouldRotate ? (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1) : 0,
-                rotation:0
+                rotation: 0
             };
         };
         
@@ -1751,6 +1838,9 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
         if (['darkling1', 'darkling9'].includes(type)) {
             return projectiles;
         }
+        
+        // Define baseSpeed for all enemy projectiles
+        const baseSpeed = 3;
         
         switch(type) {
             case 'darkling2':
@@ -1809,8 +1899,56 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 patterns[Math.floor(Math.random() * patterns.length)]();
                 break;
                 
+            case 'darkling11':
+                // Uses boss1's attack pattern but 50% slower
+                // First boss: multiple shots in a V pattern
+                for (let angle = 75; angle <= 105; angle += 7.5) {
+                    projectiles.push(createProjectile(angle, 2, 1.0)); // Half speed (4→2)
+                }
+                break;
+                
+            case 'darkling12':
+                // Uses boss2's attack pattern but 50% slower
+                // Circular pattern with fewer projectiles (6 instead of 8) and half speed
+                for (let i = 0; i < 6; i++) {
+                    const wideAngle = (i * Math.PI / 3);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(wideAngle) * baseSpeed * 0.4,
+                        dy: Math.sin(wideAngle) * baseSpeed * 0.4,
+                        width: 28,
+                        height: 28,
+                        sprite: 'darklingshot7',
+                        rotate: true,
+                        rotationSpeed: (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1),
+                        rotation: 0
+                    });
+                }
+                
+                // Add a targeted projectile with half speed
+                if (playerPosition) {
+                    const targeted = createTargetedProjectile(2.25); // Half speed (4.5→2.25)
+                    if (targeted) projectiles.push(targeted);
+                }
+                break;
+                
+            case 'darkling13':
+                // Wave 3 monster - combination of darkling7 and darkling8 attacks
+                // Medium spread with 3 shots
+                for (let angle = 80; angle <= 100; angle += 10) {
+                    projectiles.push(createProjectile(angle, 3.5));
+                }
+                
+                // Add a targeted shot if player position is available
+                if (playerPosition) {
+                    const targeted = createTargetedProjectile(3.8);
+                    if (targeted) projectiles.push(targeted);
+                }
+                break;
+                
             case 'darklingboss1':
-                               // First boss: multiple shots in a V pattern
+                // First boss: multiple shots in a V pattern
                 for (let angle = 75; angle <= 105; angle += 7.5) {
                     projectiles.push(createProjectile(angle, 4, 1.2));
                 }
@@ -1830,6 +1968,37 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 }
                 break;
                 
+            case 'darklingboss3':
+                // Final boss: heavy attack pattern
+                // Circle shot pattern (12 projectiles in all directions)
+                for (let i = 0; i < 12; i++) {
+                    const wideAngle = (i * Math.PI / 6);
+                    projectiles.push({
+                        x: x,
+                        y: y,
+                        dx: Math.cos(wideAngle) * baseSpeed * 0.8,
+                        dy: Math.sin(wideAngle) * baseSpeed * 0.8,
+                        width: 40,
+                        height: 40,
+                        sprite: 'darklingshotspecial',
+                        rotate: true,
+                        rotationSpeed: (Math.random() * 0.1 + 0.05) * (Math.random() < 0.5 ? 1 : -1),
+                        rotation: 0
+                    });
+                }
+                
+                // Add targeted projectiles
+                if (playerPosition) {
+                    const targeted1 = createTargetedProjectile(5, 1.5);
+                    if (targeted1) projectiles.push(targeted1);
+                    
+                    // Add two flanking shots
+                    const angleToPlayer = Math.atan2(playerPosition.y - y, playerPosition.x - x) * 180 / Math.PI;
+                    projectiles.push(createProjectile(angleToPlayer - 15, 4.5, 1.2));
+                    projectiles.push(createProjectile(angleToPlayer + 15, 4.5, 1.2));
+                }
+                break;
+                
             default:
                 // Default - simple straight shot
                 projectiles.push(createProjectile(90, 3));
@@ -1845,12 +2014,11 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
      */
     shouldSpawnFlyby(timestamp) {
         if (!this.flybySystem.enabled) return false;
-        
         // If no flyby is active and enough time has passed since the last one
         const timeSinceLastSpawn = timestamp - (this.flybySystem.lastSpawn || 0);
         return timeSinceLastSpawn >= this.flybySystem.spawnInterval;
     }
-    
+
     /**
      * Create a new flyby group of enemies
      * @param {number} timestamp - Current game timestamp
@@ -1859,7 +2027,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
     createFlybyGroup(timestamp) {
         this.flybySystem.lastSpawn = timestamp;
         this.flybySystem.active = true;
-        
+
         // Determine number of enemies in this flyby group
         const count = Math.floor(
             Math.random() * 
@@ -1867,7 +2035,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
             this.flybySystem.minEnemies
         );
         
-        // Select arandom height from the possible heights
+        // Select a random height from the possible heights
         const yPos = this.flybySystem.possibleHeights[
             Math.floor(Math.random() * this.flybySystem.possibleHeights.length)
         ];
@@ -1883,7 +2051,6 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
         // Create the enemies in a line formation
         const enemies = [];
         const startX = -300; // Start off-screen to the left
-        
         for (let i = 0; i < count; i++) {
             const enemy = {
                 id: `flyby_${timestamp}_${i}`,
@@ -1897,7 +2064,8 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
                 shotCooldown: this.getShotCooldown(enemyTypes[i]),
                 lastShot: 0,
                 isFlyby: true,
-                speed: this.flybySystem.speed
+                speed: this.flybySystem.speed,
+                points: this.getPoints(enemyTypes[i]) // Add points property
             };
             
             enemies.push(enemy);
@@ -1905,7 +2073,7 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
         
         return enemies; // Return the created enemies array
     }
-    
+
     /**
      * Update flyby enemy positions
      * @param {Array} flybyEnemies - Array of flyby enemies
@@ -1943,8 +2111,8 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
      * @returns {Function} - Function that returns x,y position based on time
      */
     getFlybyMovement(x, y, speed) {
+        // Simple left to right linear movement with small vertical oscillation
         return t => {
-            // Simple left to right linear movement with small vertical oscillation
             return {
                 x: x + (speed * t / 16), // Move right at constant speed
                 y: y + Math.sin(t * 0.002) * 10 // Small vertical oscillation
@@ -1953,7 +2121,6 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
     }
 }
 
-// Export the MonsterLogic class
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { MonsterLogic };
 }

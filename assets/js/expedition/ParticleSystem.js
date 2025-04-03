@@ -20,7 +20,9 @@ class ParticleSystem {
         const screenHeight = this.game.canvas ? this.game.canvas.height : 800;
         return {
             x: playerX,
-            y: screenHeight - 525 // Fixed collision point 275px from bottom
+            // FIXED: Use 200 as the fixed Y coordinate for player, which corresponds to the position
+            // defined in game_renderer.js. This ensures consistent collision detection.
+            y: 200
         };
     }
 
@@ -47,6 +49,8 @@ class ParticleSystem {
     }
 
     createExplosion(x, y, size = 1, count = 10) {
+        // FIXED: Don't apply any Y offset - use the actual coordinates provided
+        // This ensures explosions appear correctly in all parts of the screen
         for (let i = 0; i < count; i++) {
             this.createParticle(x, y, 'explosion', {
                 size: size * (0.5 + Math.random() * 0.5),
@@ -64,11 +68,12 @@ class ParticleSystem {
      * @param {boolean} isEnemy - Whether this is an enemy hit (true) or player hit (false)
      */
     createHitEffect(x, y, isEnemy = false) {
-        // If this is a player hit, ensure we're using the correct collision position
+        // FIXED: For player hits, use the collision position but don't manipulate Y coordinate
+        // This ensures hit effects appear at the correct location
         if (!isEnemy && this.game.player) {
             const playerCollision = this.getPlayerCollisionPosition(x);
             x = playerCollision.x;
-            y = -525; // Fixed Y position for player hit
+            y = playerCollision.y;
         }
         
         const type = isEnemy ? 'enemyHit' : 'playerHit';
@@ -187,6 +192,9 @@ class ParticleSystem {
      * @param {string} spriteKey - Optional sprite key for the hit effect
      */
     createEnemyProjectileHit(x, y, spriteKey = null) {
+        // FIXED: Don't adjust Y position for projectiles - use the actual coordinates
+        // This ensures projectiles from the upper part of screen are properly handled
+        
         // Create enemy projectile hit particles
         for (let i = 0; i < 8; i++) {
             this.createParticle(x, y, 'enemyProjectileHit', {

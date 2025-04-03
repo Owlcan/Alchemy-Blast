@@ -450,7 +450,7 @@ class GameRenderer {
         
         if (sprite && sprite.complete) {
             // Increased player sprite size by 50%
-            const maxDimension = 128; // Increased from 64 to 96 (50% larger)
+            const maxDimension = 176; // Increased from 64 to 96 (50% larger)
             let width = sprite.width;
             let height = sprite.height;
             
@@ -887,8 +887,19 @@ class GameRenderer {
      * @param {Object} gameState - Current game state
      */
     renderUI(gameState) {
-        // Render score
-        this.drawText(`Score: ${gameState.score}`, 20, 30, this.textSettings.score);
+        // Create a semi-transparent panel for the score display
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(10, 10, 200, 40);
+        this.ctx.strokeStyle = '#33ff66';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(10, 10, 200, 40);
+
+        // Render score with enhanced styling
+        this.drawText(`SCORE: ${gameState.score.toLocaleString()}`, 20, 35, {
+            font: 'bold 22px Arial',
+            color: '#FFFFFF',
+            shadow: '#33ff66'
+        });
         
         // Render round and wave
         this.drawText(`Round ${gameState.currentRound} - Wave ${gameState.currentWave}`, 
@@ -926,7 +937,7 @@ class GameRenderer {
         if (character === 'dere') {
             // Dere: Show layered health with chrome segments
             this.ctx.fillStyle = "#33ff66";
-            this.ctx.fillText(`Health: `, x, y);
+            this.ctx.fillText(`Health: `, x + 60, y);
             this.ctx.shadowBlur = 0; // Turn off shadow for bars
             
             // Draw health layers with chrome appearance
@@ -973,7 +984,7 @@ class GameRenderer {
                 this.ctx.shadowColor = "#33ff66";
                 this.ctx.shadowBlur = 5;
                 this.ctx.fillStyle = "#33ff66";
-                this.ctx.fillText(`Shield: `, x, y + 25);
+                this.ctx.fillText(`Shield: `, x + 65, y + 25);
                 
                 // Shield bar with chrome appearance
                 const shieldX = x + 80;

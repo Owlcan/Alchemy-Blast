@@ -134,6 +134,10 @@ class AlchemyBlaster {
             'darkling8': './assets/images/darklings/darklingmob8.png',
             'darkling9': './assets/images/darklings/darklingmob9.png',
             'darkling10': './assets/images/darklings/darklingmob10.png',
+            // New vanguard enemies for final boss
+            'darkling11': './assets/images/darklings/darklingmob11.png',
+            'darkling12': './assets/images/darklings/darklingmob12.png',
+            'darkling13': './assets/images/darklings/darklingmob13.png',
             'darklingboss1': './assets/images/darklings/darklingboss1.png',
             'darklingboss2': './assets/images/darklings/darklingboss2.png',
             'darklingboss3': './assets/images/darklings/darklingboss3.png',
@@ -851,10 +855,11 @@ class AlchemyBlaster {
 
             const enemy = enemies[spawned];
             const newEnemy = new Enemy(
-                this,
-                enemy.type,
                 enemy.x,
-                enemy.y
+                enemy.y,
+                enemy.type,
+                this,
+                enemy.pattern
             );
             
             this.enemies.push(newEnemy);
@@ -877,7 +882,8 @@ class AlchemyBlaster {
             enemies.push({
                 type: bossType,
                 x: width/2,
-                y: -150 // Move boss higher up
+                y: -150, // Move boss higher up
+                pattern: 'boss'
             });
             
             return enemies;
@@ -895,7 +901,7 @@ class AlchemyBlaster {
                               type === 'darkling3' ? -120 :
                               -150;
                 
-                enemies.push({ type, x, y: -100 + yOffset });
+                enemies.push({ type, x, y: -100 + yOffset, pattern: 'default' });
             }
             return enemies;
         }
@@ -971,7 +977,7 @@ class AlchemyBlaster {
                           type === 'darkling3' ? -15 :
                           -10;
             
-            enemies.push({ type, x, y: y + yOffset });
+            enemies.push({ type, x, y: y + yOffset, pattern: 'default' });
         }
 
         return enemies;
@@ -1681,431 +1687,6 @@ class Player {
     }
 }
 
-class Projectile {
-    constructor(game, x, y, targetX, targetY) {
-        this.game = game;
-        this.x = x;
-        this.y = y;
-        // Use character-specific settings
-        let projectileSize = this.game.player.projectileSize || 1;
-        
-        // HandleAliza's shot2 alternating size
-        if (this.game.selectedCharacter === 'aliza' && 
-            this.game.player.projectileSprites[Math.floor(Math.random() * this.game.player.projectileSprites.length)] === 'alizaShot2') {
-            projectileSize = Math.random() < 0.5 ? 3 : 2;  // Alternate between extra large and large
-        }
-        
-        this.width = 40 * projectileSize;
-        this.height = 40 * projectileSize;
-        this.speed = this.game.player.projectileSpeed || 15;
-        
-        const angle = Math.atan2(targetY - y, targetX - x);
-        this.dx = Math.cos(angle) * this.speed;
-        this.dy = Math.sin(angle) * this.speed;
-
-        // Use character-specific projectile sprites
-        if (this.game.player.projectileSprites) {
-            const randomIndex = Math.floor(Math.random() * this.game.player.projectileSprites.length);
-            this.sprite = this.game.player.projectileSprites[randomIndex];
-        } else {
-            this.sprite = 'shot1';
-            const randomSprite = Math.random();
-            if (randomSprite < 0.2) this.sprite = 'shot1a';
-            else if (randomSprite < 0.4) this.sprite = 'shot1b';
-        }
-    }
-
-    update() {
-        this.x += this.dx;
-        this.y += this.dy;
-        return this.isOffscreen();
-    }
-
-    draw() {
-        const sprite = this.game.assets.images[this.sprite];
-        if (sprite) {
-            this.game.ctx.drawImage(sprite, 
-                this.x - this.width/2, 
-                this.y - this.height/2, 
-                this.width, 
-                this.height 
-            );
-        }
-    }
-
-    isOffscreen() {
-        return this.x < 0 || this.x > this.game.canvas.width || 
-               this.y < 0 || this.y > this.game.canvas.height;
-    }
-}
-
-class Enemy {
-    constructor(game, type, x, y) {
-        this.game = game;
-        this.type = type;
-        this.x = x;
-        this.y = y;
-        console.log(`Creating enemy of type: ${type} at position (${x}, ${y})`);
-        // Set dimensions based on enemy type
-        if (type === 'darkling1') {
-            this.width = 34;    // 20% smaller (from 42)
-            this.height = 67;   // 20% smaller (from 84)
-        } else if (type === 'darkling2') {
-            this.width = 126;   // 20% larger (from 84)
-            this.height = 126;  
-        } else {
-            this.width = 84;    
-            this.height = 84;   
-        }
-        this.reversePattern = Math.random() > 0.5;
-        this.patternOffset = Math.random() * Math.PI * 2;
-        this.health = this.getInitialHealth();
-        this.pattern = this.getMovementPattern();
-        this.lastShot = 0;
-        this.shotCooldown = this.getShotCooldown();
-        this.speed = this.getSpeed();
-        this.points = this.getPoints();
-        this.fadeAlpha = 1;        
-        this.shieldActive = false;
-        this.shieldCooldown= 0;
-        this.lastTeleport = 0        
-        this.spawnTime = Date.now();
-        this.isInvulnerable = false;
-        this.isCharging = false;
-        // Check if sprite is available and log result
-        if (!this.game.assets.images[this.type]) {
-            console.error(`ERROR: Sprite for ${this.type} not found!Available sprites:`, Object.keys(this.game.assets.images));
-        } else {
-            console.log(`Successfully created ${thistype} enemy with image:`, this.game.assets.images[this.type].src);
-        }
-    }
-
-    getInitialHealth() {
-        if (this.type === 'darklingboss1') return 25;
-        if (this.type === 'darklingboss2') return 30;
-        if (this.type=== 'darklingboss3') return 4000; // 100x HP for final boss
-        if (this.type === 'darkling4') return 3;
-        if (this.type === 'darkling7') return 10;
-        if (['darkling6', 'darkling8'].includes(this.type)) return 2;
-        return 1;
-    }
-
-    getMovementPattern() {
-        const randomOffset = this.patternOffset;
-        const reverseDirection = this.reversePattern ? -1 : 1;
-        const phaseOffset = Math.random() * 1000;
-        const verticalOffset = Math.random() * 50 - 25;
-        const amplitudeVariation = 0.8 + Math.random() * 0.4;
-        switch(this.type) {
-            case 'darkling1':
-                const gridSize = 120;
-                const moveSpeed = 0.006;
-                let initialX = this.x;
-                let initialY = this.y;
-                let lastChangeTime = 0;
-                let isRandomMove = false;
-                let randomAngle = 0;
-                let randomDuration = 0;
-                return t => {
-                    // Check for random direction change (50% chance every 3 seconds)
-                    if (!isRandomMove && t - lastChangeTime > 3000 && Math.random() < 0.5) {
-                        isRandomMove = true;
-                        randomAngle = Math.random() * Math.PI * 2;
-                        randomDuration = 500; // Duration of random movement in ms
-                        lastChangeTime = t;
-                    }
-                    // Handle random movement
-                    if (isRandomMove) {
-                        if (t - lastChangeTime < randomDuration) {
-                            // Quick burst in random direction
-                            return {
-                                x: initialX + Math.cos(randomAngle) * ((t - lastChangeTime) / 100) * gridSize * 0.5,
-                                y: initialY + Math.sin(randomAngle) * ((t - lastChangeTime) / 100) * gridSize * 0.5,
-                            };
-                        } else {
-                            // Reset after random movement
-                            isRandomMove = false;
-                            initialX = this.x;
-                            initialY = this.y;
-                        }
-                    }
-                    // Normalmovement pattern
-                    const normalizedTime = t * moveSpeed;
-                    const pattern = Math.floor(normalizedTime / 4) % 8;
-                    const progress = (normalizedTime % 4) - 2;
-                    let x, y;
-                    switch(pattern) {
-                        case 0: // Move right
-                            x = initialX + progress * gridSize;
-                            y = initialY;
-                            break;
-                        case 1: // Move diagonal down-right
-                            x = initialX + progress * gridSize;
-                            y = initialY + progress * gridSize;
-                            break;
-                        case 2: // Move down
-                            x = initialX + gridSize;
-                            y = initialY + progress * gridSize;
-                            break;
-                        case 3: // Move diagonal down-left
-                            x = initialX + (2 - progress) * gridSize;
-                            y = initialY + progress * gridSize;
-                            break;
-                        case 4: // Move left
-                            x = initialX + (2 - progress) * gridSize;
-                            y = initialY + gridSize;
-                            break;
-                        case 5: // Move diagonal up-left
-                            x = initialX + (2 - progress) * gridSize;
-                            y = initialY + (2 - progress) * gridSize;
-                            break;
-                        case 6: // Move up
-                            x = initialX;
-                            y = initialY + (2 - progress) * gridSize;
-                            break;
-                        case 7: // Move diagonal up-right
-                            x = initialX + progress * gridSize;
-                            y = initialY + (2 - progress) * gridSize;
-                            break;
-                    }
-                    return {
-                        x: x * reverseDirection,
-                        y: y + 50 + (Math.sin(t * 0.001 + randomOffset) * 20)
-                    };
-                };
-            case 'darkling2':
-                return t => {
-                    // Add random direction change similar to darkling1
-                    if (!this.lastChangeTime) this.lastChangeTime = t;
-                    if (!this.isRandomMove && t - this.lastChangeTime > 3000 && Math.random() < 0.5) {
-                        this.isRandomMove = true;
-                        this.randomAngle = Math.random() * Math.PI * 2;
-                        this.randomDuration = 500;
-                        this.initialX =this.x;
-                        this.initialY= this.y;
-                    }
-                    if (this.isRandomMove) {
-                        if (t - this.lastChangeTime < this.randomDuration) {
-                            return {
-                                x: this.initialX + Math.cos(this.randomAngle) * ((t - this.lastChangeTime) / 100) * 80,
-                                y: this.initialY + Math.sin(this.randomAngle) * ((t - this.lastChangeTime) / 100) * 80,
-                            };
-                        } else {
-                            this.isRandomMove = false;
-                            this.initialX= this.x;
-                            this.initialY = this.y;
-                        }
-                    }
-                                       //// Normal snake-like pattern
-                    const rowHeight = 80;
-                    const width = this.game.canvas.width * 0.45;
-                    const normalizedTime = t * 0.01;
-                    const row = Math.floor(normalizedTime / width) % 4;
-                    const xProgress = (normalizedTime % width);
-                    let x = (row % 2 === 0) ? xProgress : (width - xProgress);
-                    let y = row * rowHeight + 80 + Math.sin(t * 0.01 + randomOffset) * 40;
-                    return {
-                        x: x * reverseDirection,
-                        y: y + verticalOffset + (Math.sin(t * 0.002 + randomOffset) * 15)
-                    };
-                };
-            case 'darklingboss1':
-                return t => ({
-                    x: Math.sin(t * 0.001) * (this.game.canvas.width * 0.4),
-                    y: 120 + Math.sin(t * 0.0007) * (this.game.canvas.height * 0.2)
-                });
-
-            case 'darklingboss2':
-                return t => ({
-                    x: Math.sin(t * 0.0008) * (this.game.canvas.width * 0.45),
-                    y: 150 + Math.cos(t * 0.0005) * (this.game.canvas.height * 0.25)
-                });
-            
-            case 'darklingboss3':
-                return t => {
-                    // Complex boss movement pattern
-                    const phase = Math.floor(t / 8000) % 3;
-                    const phaseProgress = (t % 8000) / 8000;
-                    
-                    switch(phase) {
-                        case 0: // Left-right sweeping
-                            return {
-                                x: Math.sin(t * 0.0005) * (this.game.canvas.width * 0.4),
-                                y: 120 + Math.sin(t * 0.0002) * 30
-                            };
-                        case 1: // Circle pattern
-                            return {
-                                x: Math.sin(t * 0.0007) * (this.game.canvas.width * 0.35),
-                                y: 150 + Math.cos(t * 0.0007) * 50
-                            };
-                        case 2: // Figure-8 pattern
-                            return {
-                                x: Math.sin(t * 0.001) * (this.game.canvas.width * 0.3),
-                                y: 130 + Math.sin(t * 0.002) * Math.cos(t * 0.001) * 60
-                            };
-                    }
-                    
-                    // Default fallback
-                    return {
-                        x: Math.sin(t * 0.001) * (this.game.canvas.width * 0.4),
-                        y: 120
-                    };
-                };
-            default:
-                return ['darkling2', 'darkling5', 'darkling6'].includes(this.type) ?
-                    t => ({ 
-                        x: Math.sin(t * 0.015) * (this.game.canvas.width * 0.4), 
-                        y: Math.cos(t * 0.01) * (this.game.canvas.height * 0.2) 
-                    }) : t => ({ 
-                        x: Math.sin(t * 0.01) * (this.game.canvas.width * 0.35), 
-                        y: Math.sin(t * 0.008) * (this.game.canvas.height * 0.15) 
-                    });
-        }
-    }
-
-    getShotCooldown() {
-        if (this.type === 'darkling4') return 3000;
-        if (this.type === 'darklingboss1') return 5000;
-        if (this.type === 'darklingboss2') return this.health > 25 ? Infinity : 4000;
-        if (this.type === 'darklingboss3') return 5000;
-        return {
-            'darkling2': 4000,  // Increased from 5000
-            'darkling3': 5000,  // Increased from 4000
-            'darkling5': 4000,  // Increased from 4000
-            'darkling6': 3000,  // Increased from 3000
-            'darkling7': 3000,  // Increased from 5000
-            'darkling8': 3000,  // Increased from 5000
-            'darkling10': 2000  // Increased from 5000
-        }[this.type] || 6000;  // Default increased from 5000
-    }
-
-    getSpeed() {
-        if (this.type === 'darklingboss3' && this.health <= 20) return 2;
-        return this.type.includes('boss') ? 1 : 1.5;
-    }
-
-    getPoints() {
-        if (this.type === 'darklingboss1') return 100;
-        if (this.type === 'darklingboss2') return this.health > 25 ? Infinity : 4000;
-        return this.type.includes('boss') ? 100 : 10;
-    }
-
-    update(time) {
-        // Check if darkling1 or darkling9 should flee
-        if ((this.type === 'darkling1' && time - this.spawnTime > 15000) ||
-            (this.type === 'darkling9' && time - this.spawnTime > 10000)) {
-            this.fadeAlpha -= 0.05;
-            if (this.fadeAlpha <= 0) {
-                return true;  // Remove this enemy
-            }
-        }
-
-        // Update position based on pattern
-        const pos = this.pattern(time);
-        // Allow full vertical range with no top margin
-        this.x = Math.max(this.width/2, Math.min(this.game.canvas.width - this.width/2,
-                     this.game.canvas.width/2 + pos.x));
-        this.y = Math.min(this.game.canvas.height * 0.6, pos.y);
-
-        // Handle shield cooldown for darkling4
-        if (this.type === 'darkling4' && this.shieldCooldown > 0) {
-            this.shieldCooldown = Math.max(0, this.shieldCooldown - (time - this.lastShot));
-            this.shieldActive = false;
-        }
-
-        // Handle shooting
-        if (time - this.lastShot >= this.shotCooldown && !this.isInvulnerable) {
-            this.shoot();
-            this.lastShot = time;
-        }
-        return false;  // Keep this enemy
-    }
-
-    draw() {
-        const sprite = this.game.assets.images[this.type];
-        if (sprite && sprite.complete) {
-            this.game.ctx.save(); // Save the current context state
-                       this.game.ctx.globalAlpha = this.fadeAlpha;
-            
-            if (this.shieldActive) {
-                this.game.ctx.shadowColor = 'blue';
-                this.game.ctx.shadowBlur = 10;
-            }
-            if (this.type === 'darklingboss3' && this.health <= 20) {
-                this.game.ctx.shadowColor = 'red';
-                this.game.ctx.shadowBlur = 15;
-            }
-            
-            const drawX = this.x - this.width/2;
-            const drawY = this.y - this.height/2;
-            
-            // Draw the sprite without rotation
-            this.game.ctx.drawImage(sprite, drawX, drawY, this.width, this.height);
-            
-            this.game.ctx.shadowBlur = 0;
-            this.game.ctx.restore(); // Restore the context state
-        } else {
-            console.error(`Failed to load sprite for enemy type: ${this.type}`);
-            this.game.ctx.fillStyle = 'red';
-            this.game.ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
-        }
-    }
-
-    shoot() {
-        if (this.type === 'darkling1' || this.type === 'darkling9') return;
-        
-        // Use the game's enemyShoot method which uses ProjectileManager
-        if (this.game && typeof this.game.enemyShoot === 'function') {
-            this.game.enemyShoot(this);
-            return;
-        }
-        
-        // Legacy fallback (should not be used once ProjectileManager is integrated)
-        const createProjectile = (angle, speed = 5, size = 1) => {
-            const rad = angle * Math.PI / 180;
-            const dx = Math.cos(rad) * speed;
-            const dy = Math.sin(rad) * speed;
-            const proj = new EnemyProjectile(this.game, this.x, this.y, dx, dy);
-            proj.width *= size;
-            proj.height *= size;
-            proj.sprite = 'shot1'; // Use player's shot sprite for enemy projectiles
-            return proj;
-        };
-        
-        // Play boss shooting sound for bosses
-        if (this.type.includes('boss')) {
-            const spellSounds = this.game.assets.sounds.spellfire;
-            const randomSound = spellSounds[Math.floor(Math.random() * spellSounds.length)];
-            randomSound.currentTime = 0;
-            randomSound.play();
-        }
-    }
-
-    takeDamage() {
-        this.health--;
-        
-        // If defeated, potentially drop a powerup
-        if (this.health <= 0) {
-            // Random chance to drop a powerup (higher for bosses)
-            const dropChance = this.type.includes('boss') ? 0.5 : 0.1;
-            if (Math.random() < dropChance) {
-                const types = ['health', 'power', 'shield'];
-                const randomType = types[Math.floor(Math.random() * types.length)];
-                this.game.powerups.push(new Powerup(this.game, this.x, this.y, randomType));
-            }
-            
-            // Add points to score
-            if (this.points) {
-                this.game.score += this.points;
-            }
-            
-            return true; // Enemy was defeated
-        }
-        
-        return false; // Enemy survived
-    }
-}
-
 class EnemyProjectile extends Projectile {
     constructor(game, x, y, dx, dy) {
         super(game, x, y, x + dx * 100, y + dy * 100);
@@ -2202,6 +1783,436 @@ class Powerup {
         this.bobAmount = 5;
         this.bobSpeed = 0.05;
         this.bobOffset = Math.random() * Math.PI * 2;
+        this.startTime = Date.now();
+        
+        // Set sprite based on type
+        this.sprite = this.type === 'health' ? 'healthPotion' : 
+                      this.type === 'power' ? 'powerPotion' : 'shieldPotion';
+    }
+
+    update() {
+        // Make the powerup fall downward with a slight bobbing motion
+        this.y += this.fallSpeed;
+        
+        // Add a drifting motion (left/right)
+        this.x += Math.cos(this.angle) * this.driftAmount * 
+                Math.sin(Date.now() * 0.001 + this.bobOffset);
+        
+        // Add bobbing motion
+        const bobY = Math.sin(Date.now() * this.bobSpeed + this.bobOffset) * this.bobAmount;
+        this.y += bobY * 0.1; // Scale the bob amount
+        
+        // Remove if offscreen
+        if (this.y > this.game.canvas.height + 50) { 
+            return true; // Remove this powerup
+        }
+        
+        return false; // Keep this powerup
+    }
+
+    draw() {
+        const sprite = this.game.assets.images[this.sprite];
+        if (sprite) {
+            // Create a nice glowing effect for the potion
+            this.game.ctx.save();
+            // Add glow based on potion type
+            const glowColor = this.type === 'health' ? 'rgba(255, 50, 50, 0.3)' : 
+                             this.type === 'power' ? 'rgba(50,255, 50, 0.3)' : 
+                             'rgba(50, 50, 255, 0.3)';
+            this.game.ctx.shadowColor = glowColor;
+            this.game.ctx.shadowBlur = 10 + Math.sin(Date.now() * 0.005) * 5;
+            // Draw the potion with a slight bobbing animation
+            this.game.ctx.drawImage(
+                sprite, 
+                this.x - this.width/2, 
+                this.y - this.height/2 + Math.sin(Date.now() * 0.005) * 3, 
+                this.width, 
+                this.height 
+            );
+            this.game.ctx.restore();
+        }   
+    }
+
+    collect(player) {
+        // Play a random potion sound
+        this.playPotionSound();
+        // Apply effect based on type
+        switch(this.type) {
+            case 'health':
+                if (player.health < 3) {
+                    player.health++;
+                    console.log("Health potion collected! Health restored to:", player.health);
+                    // Reset alpha for overlays that should be visible
+                    for (let i = 0; i < player.healthOverlays.length; i++) {
+                        if (i < player.health) {
+                            player.healthOverlays[i].alpha = 1;
+                        }
+                    }
+                }
+                break;
+            case 'power':
+                player.powerShotActive = true;
+                player.powerShotEndTime= Date.now() + 30000; // 30 seconds
+                player.originalSpeed = player.speed;
+                player.originalShotCooldown = player.shotCooldown;
+                console.log("Power potion collected! Speed and firepower enhanced for 30 seconds");
+                // Reset alpha for overlays that should be visible
+                if (!this.game.powerUI) {
+                    this.game.powerUI = {
+                        startTime: Date.now(),
+                        duration: 30000 // 30 seconds
+                    };
+                } else {
+                    this.game.powerUI.startTime = Date.now();
+                }
+                break;
+            case 'shield':
+                player.shieldActive = true;
+                player.shieldEndTime = Date.now() + 30000; // 30 seconds
+                console.log("Shield potion collected! Player is invulnerable for 30 seconds");
+                player.speed = player.originalSpeed * 1.1; // 10% movement speed increase
+                // Create shield UI if it doesn't exist
+                if (!this.game.shieldUI) {
+                    this.game.shieldUI = {
+                        startTime: Date.now(),
+                        duration: 30000 // 30 seconds
+                    };
+                } else {
+                    this.game.shieldUI.startTime = Date.now();
+                }
+                break;
+        }
+    }
+
+    playPotionSound() {
+        // Define potential potion sounds
+        const potionSounds = [
+            this.game.assets.sounds.potion1,
+            this.game.assets.sounds.potion2,
+            this.game.assets.sounds.potion3,
+            this.game.assets.sounds.potion4
+        ];
+        // Check if any potion sound is currently playing
+        const isSoundPlaying = potionSounds.some(sound => 
+            !sound.paused && sound.currentTime > 0 && sound.currentTime < sound.duration
+        );
+        // If no potion sound is playing, play a random one
+        if (!isSoundPlaying) {
+            const randomIndex = Math.floor(Math.random() * potionSounds.length);
+            const sound = potionSounds[randomIndex];
+            sound.currentTime = 0;
+            sound.play().catch(e => console.error("Error playing potion sound:", e));
+        }
+    }
+}
+
+// Add inputhandlers to AlchemyBlaster class
+AlchemyBlaster.prototype.handleKeyDown = function(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a') this.keys.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd') this.keys.right = true;
+    if (e.key === ' ' || e.key.toLowerCase() === 'q') this.togglePause();
+};
+
+AlchemyBlaster.prototype.handleKeyUp = function(e) {
+    if (e.key === 'ArrowLeft' || e.key === 'a') this.keys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd') this.keys.right = false;
+};
+
+AlchemyBlaster.prototype.handleMouseMove = function(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    this.mousePosition.x = e.clientX - rect.left;
+    this.mousePosition.y = e.clientY - rect.top;
+};
+
+AlchemyBlaster.prototype.handleMouseDown = function(e) {
+    if (e.button === 0) { // Left click
+        // In menu state, handle character selection
+        if (this.gameState === 'menu') {
+            const rect = this.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Character selection hitbox
+            const charWidth = 200;
+            const charHeight = 300;
+            const spacing = 100;
+            const startX = (this.canvas.width - (2 * charWidth + spacing)) / 2;
+            const startY = 100;
+
+            // Check if clicked on Dere
+            if (mouseX >= startX && mouseX <= startX + charWidth &&
+                mouseY >= startY && mouseY <= startY + charHeight) {
+                this.selectedCharacter = 'dere';
+                this.initializeSelectedCharacter();
+                return;
+            }
+            
+            // Check if clicked on Aliza
+            if (mouseX >= startX + charWidth + spacing && mouseX <= startX + 2 * charWidth + spacing &&
+                mouseY >= startY && mouseY <= startY + charHeight) {
+                this.selectedCharacter = 'aliza';
+                this.initializeSelectedCharacter();
+                return;
+            }
+        }
+        
+        // If we're playing, handle shooting
+        if (this.gameState === 'playing') {
+            this.isShooting = true;
+            
+            // Handle right click burst fire for Aliza
+            if (e.button === 2 && this.selectedCharacter === 'aliza' && 
+                this.player.canBurstFire && !this.player.isBurstFiring) {
+                this.player.triggerBurstFire();
+            }
+        }
+    } else if (e.button === 1) { // Middle click
+        e.preventDefault();
+        this.togglePause();
+    } else if (e.button === 2) { // Right click
+        e.preventDefault(); // Prevent context menu
+        
+        // Trigger Aliza's burst fire if playing and character is Aliza
+        if (this.gameState === 'playing' && this.selectedCharacter === 'aliza' && 
+            this.player.canBurstFire && !this.player.isBurstFiring) {
+            this.player.triggerBurstFire();
+        }
+    }
+};
+
+AlchemyBlaster.prototype.initializeSelectedCharacter = function() {
+    // Ensure player exists first
+    if (!this.player) {
+        this.player = new Player(this);
+    }
+
+    // Configure character-specific properties
+    if (this.selectedCharacter === 'aliza') {
+        this.player.sprites = {
+            left: 'alizaLeft',
+            right: 'alizaRight'
+        };
+        this.player.projectileSprites = ['alizaShot1', 'alizaShot2', 'alizaShot3'];
+        this.player.projectileSize = 2.5;
+        this.player.projectileSpeed = 11.25;
+        this.player.sounds = {
+            hit: ['alizaHit1', 'alizaHit2'],
+            victory: ['alizaVictory1', 'alizaVictory2'],
+            gameOver: ['alizaGameOver1', 'alizaGameOver2']
+        };
+        this.player.ignoreVisualOverlays = true; // Flag to ignore HP overlays
+        this.player.gameOverImage = 'alizagameover';
+        
+        // Aliza-specific mechanics per requirements
+        this.player.speed = 7.5; // Enhanced movement speed
+        this.player.maxShield = 100;
+        this.player.shield = 100;
+        this.player.shieldRegenRate = 0.05; // Shield regeneration rate per frame
+        this.player.useShield = true; // Flag to use shield instead of health
+        this.player.burstFireCooldown = 3000; // 3 seconds cooldown for burst fire
+        this.player.lastBurstFire = 0;
+        this.player.canBurstFire = true;
+    } else {
+        // Default Dere configuration 
+        this.player.sprites = {
+            left: 'playerLeft',
+            right: 'playerRight'
+        };
+        this.player.gameOverImage = 'deregameover';
+        this.player.projectileSprites = ['shot1', 'shot1a', 'shot1b'];
+        this.player.projectileSize = 1;
+        this.player.projectileSpeed = 15;
+        this.player.sounds = {
+            hit: ['hit1', 'hit2'],
+            victory: ['victory', 'victory1', 'victory2'],
+            gameOver: ['gameOver', 'gameOver1']
+        };
+        this.player.healthOverlays = [
+            { sprite: 'playerHP3', alpha: 1 },
+            { sprite: 'playerHP2', alpha: 1 },
+            { sprite: 'playerHP1', alpha: 1 }
+        ];
+        this.player.useShield = false;
+        this.player.speed = 5; // Regular movement speed
+    }
+
+    // Start the game
+    this.gameState = 'playing';
+    this.spawnWave();
+};
+
+/**
+ * Load character-specific assets
+ */
+AlchemyBlaster.prototype.loadCharacterAssets = function(character) {
+    if (character === 'aliza') {
+        // Load Aliza's sprites
+        this.loadImage('alizaleft', 'assets/images/darklings/alizaleft.png');
+        this.loadImage('alizaright', 'assets/images/darklings/alizaright.png');
+        this.loadImage('alizashot1', 'assets/images/darklings/alizashot1.png');
+        this.loadImage('alizashot2', 'assets/images/darklings/alizashot2.png');
+        this.loadImage('alizashot3', 'assets/images/darklings/alizashot3.png');
+        this.loadImage('alizagameover', 'assets/images/darklings/alizagameover.png');
+        this.loadImage('alizashotimpact1', 'assets/images/darklings/alizashotimpact1.png');
+        this.loadImage('alizashotimpact2', 'assets/images/darklings/alizashotimpact2.png');
+        
+        // Load Aliza's sounds
+        this.loadSound('alizavictory1', 'assets/sounds/alizavictory1.wav');
+        this.loadSound('alizavictory2', 'assets/sounds/alizavictory2.wav');
+        this.loadSound('alizagameover1', 'assets/sounds/alizagameover1.wav');
+        this.loadSound('alizagameover2', 'assets/sounds/alizagameover2.wav');
+        this.loadSound('alizahit1', 'assets/sounds/alizahit1.wav');
+        this.loadSound('alizahit2', 'assets/sounds/alizahit2.wav');
+    } else {
+        // Load Dere's sprites
+        this.loadImage('dereleft', 'assets/images/darklings/dereleft.png');
+        this.loadImage('dereright', 'assets/images/darklings/dereright.png');
+        this.loadImage('derehp1', 'assets/images/darklings/derehp1.png');
+        this.loadImage('derehp2', 'assets/images/darklings/derehp2.png');
+        this.loadImage('derehp3', 'assets/images/darklings/derehp3.png');
+        this.loadImage('shot1', 'assets/images/darklings/shot1.png');
+        this.loadImage('shot1a', 'assets/images/darklings/shot1a.png');
+        this.loadImage('shot1b', 'assets/images/darklings/shot1b.png');
+        this.loadImage('shotimpact1', 'assets/images/darklings/shotimpact1.png');
+        this.loadImage('shotimpact2', 'assets/images/darklings/shotimpact2.png');
+        this.loadImage('deregameover', 'assets/images/darklings/deregameover.png');
+    }
+    
+    // Load common assets
+    this.loadImage('power_potion', 'assets/images/darklings/power_potion.png');
+    this.loadImage('shield_potion', 'assets/images/darklings/shield_potion.png');
+    this.loadImage('health_potion', 'assets/images/darklings/health_potion.png');
+};
+
+/**
+ * Draw the player character
+ */
+AlchemyBlaster.prototype.drawPlayer = function() {
+    // Draw player sprite based on selected character
+    const ctx = this.ctx;
+    const player = this.player;
+    
+    // Draw the player sprite
+    const sprite = this.assets.images[player.currentSprite];
+    if (sprite && sprite.complete) {
+        ctx.drawImage(sprite, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+    }
+    
+    // Draw Dere's health layers if using Dere
+    if (this.selectedCharacter === 'dere') {
+        // Draw health layers on top of player sprite
+        const hp1 = this.assets.images.derehp1;
+        if (hp1 && hp1.complete) {
+            ctx.globalAlpha = 0.8;
+            ctx.drawImage(hp1, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+            ctx.globalAlpha = 1.0;
+        }
+        
+        if (player.health >= 2) {
+            const hp2 = this.assets.images.derehp2;
+            if (hp2 && hp2.complete) {
+                ctx.globalAlpha = 0.8;
+                ctx.drawImage(hp2, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+        
+        if (player.health >= 3) {
+            const hp3 = this.assets.images.derehp3;
+            if (hp3 && hp3.complete) {
+                ctx.globalAlpha = 0.8;
+                ctx.drawImage(hp3, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+    } else if (this.selectedCharacter === 'aliza' && player.shield > 0) {
+        // Draw Aliza's shield if she has shield remaining
+        const barX = 20;  // Define barX for the shield bar
+        const barY = this.canvas.height - 50; // Define barY for the shield bar
+        const barWidth = 150; // Define barWidth for the shield bar
+        const barHeight = 15; // Define barHeight for the shield bar
+        
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.width / 1.5, 0, Math.PI * 2);
+        
+        // Make shield color and opacity based on shield percentage
+        const shieldPercent = player.shield / player.maxShield;
+        ctx.globalAlpha = Math.max(0.2, shieldPercent);
+        
+        // Create gradient for shield
+        const gradient = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
+        gradient.addColorStop(0, '#3355ff');
+        gradient.addColorStop(0.5, '#33ccff');
+        gradient.addColorStop(1, '#33ffff');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(barX, barY, barWidth * shieldPercent, barHeight);
+        
+        // Shield bar border
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        
+        // Label
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText('Shield', barX - 10, barY + barHeight / 2 + 4);
+        
+        // Draw HP indicator
+        ctx.fillStyle = '#ff5555';
+        ctx.fillRect(this.canvas.width - 50, 45, 30, 15);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(this.canvas.width - 50, 45, 30, 15);
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText('HP', this.canvas.width - 60, 55);
+    }
+    
+    // Draw special ability cooldown for both characters
+    // This would typically be a burst attack or shield boost
+    const cooldownBarWidth = 100;
+    const cooldownBarHeight = 10;
+    const cooldownBarX = 20;
+    const cooldownBarY = this.canvas.height - 30;
+    
+    // Default cooldown time (5 seconds)
+    const cooldownTime = this.selectedCharacter === 'aliza' ? 3000 : 5000;
+    const cooldownRemaining = Math.max(0, cooldownTime - (Date.now() - (this.lastSpecialUseTime || 0)));
+    const cooldownPercent = 1 - (cooldownRemaining / cooldownTime);
+    
+    // Cooldown bar background
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight);
+    
+    // Cooldown bar fill
+    ctx.fillStyle = cooldownPercent >= 1 ? '#33ff33' : '#ff9933';
+    ctx.fillRect(cooldownBarX, cooldownBarY, cooldownBarWidth * cooldownPercent, cooldownBarHeight);
+    
+    // Cooldown bar border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight);
+    
+    // Label
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Special', cooldownBarX, cooldownBarY - 5);
+    
+    // Display a "READY" indicator if special is available
+    if (cooldownPercent >= 1) {
+        ctx.fillStyle = '#33ff33';
+        ctx.fillText('READY', cooldownBarX + cooldownBarWidth + 10, cooldownBarY + cooldownBarHeight / 2 + 4);
+    }
+};
+
+/**
+ * Handle player being hit
+ */
+AlchemyBlaster.prototype.playerHit = function() {
+    const player = this.player;
+    
         this.startTime = Date.now();
         
         // Set sprite based on type
@@ -2798,7 +2809,7 @@ AlchemyBlaster.prototype.movePlayerLeft = function() {
  */
 AlchemyBlaster.prototype.movePlayerRight = function() {
     // Update player direction for sprite
-    this.player.currentSprite = this.selectedCharacter === 'aliza' ? 'alizaright' : 'dereright';
+    this.player.currentSprite = this.selectedCharacter === 'alizaright' ? 'alizaright' : 'dereright';
     
     // Move player based on their speed
     this.player.x = Math.min(this.canvas.width - this.player.width / 2, this.player.x + this.player.speed);
@@ -2902,3 +2913,80 @@ AlchemyBlaster.prototype.useSpecialAbility = function() {
     // Play special ability sound
     this.playSound('special');
 };
+
+class Enemy {
+    constructor(x, y, type, game, pattern) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.game = game;
+        this.pattern = pattern;
+        this.width = 50;
+        this.height = 50;
+        this.spawnTime = Date.now();
+        this.lastShot = 0;
+        this.shotCooldown = 2000; // Default shot cooldown
+        this.isInvulnerable = false;
+        this.fadeAlpha = 1;
+        this.shieldActive = false;
+        this.shieldCooldown = 0;
+        this.position = { x: this.x, y: this.y };
+    }
+
+    update(time) {
+        // Check if darkling1 or darkling9 should flee
+        if ((this.type === 'darkling1' && time - this.spawnTime > 15000) ||
+            (this.type === 'darkling9' && time - this.spawnTime > 10000)) {
+            this.fadeAlpha -= 0.05;
+            if (this.fadeAlpha <= 0) {
+                return true; // Remove the enemy
+            }
+        }
+
+        // Update position based on pattern
+        const pos = this.pattern(time);
+        
+        // FIXED: Allow enemies to appear in full vertical range
+        // This removes the arbitrary top limit that was preventing enemies from
+        // appearing in the top half of the screen
+        this.x = Math.max(this.width/2, Math.min(this.game.canvas.width - this.width/2,
+                     this.game.canvas.width/2 + pos.x));
+        this.y = pos.y; // No longer limit Y position to bottom 60% of screen
+        
+        // Update position object to match coordinates
+        this.position.x = this.x;
+        this.position.y = this.y;
+
+        // Handle shield cooldown for darkling4
+        if (this.type === 'darkling4' && this.shieldCooldown > 0) {
+            this.shieldCooldown--;
+            if (this.shieldCooldown === 0) {
+                this.shieldActive = false;
+            }
+        }
+
+        // Handle shooting - FIXED: enemies properly fire now
+        if (time - this.lastShot >= this.shotCooldown && !this.isInvulnerable) {
+            // Skip shooting only for specific non-shooting enemies
+            if (this.type !== 'darkling1' && this.type !== 'darkling9') {
+                this.shoot();
+                this.lastShot = time;
+            }
+        }
+        return false;
+    }
+
+    draw() {
+        const sprite = this.game.assets.images[this.type];
+        if (sprite) {
+            this.game.ctx.save();
+            this.game.ctx.globalAlpha = this.fadeAlpha;
+            this.game.ctx.drawImage(sprite, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+            this.game.ctx.restore();
+        }
+    }
+
+    shoot() {
+        this.game.player.shoot();
+    }
+}

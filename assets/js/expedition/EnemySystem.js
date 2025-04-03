@@ -75,11 +75,11 @@ class Enemy {
             case 'darkling10':
                 return 4;
             case 'darklingboss1':
-                return 30;
+                return 50;
             case 'darklingboss2':
-                return 45;
+                return 150;
             case 'darklingboss3':
-                return 60;
+                return 4000;
             default:
                 return 1;
         }
@@ -100,16 +100,17 @@ class Enemy {
                 return 0; // Doesn't shoot
             case 'darkling2':
             case 'darkling3':
-                return 2000;
-            case 'darkling4':
-                return 3000;
-            case 'darkling5':
-            case 'darkling6':
-                return 2200;
-            case 'darkling7':
                 return 2500;
+            case 'darkling4':
+                return 2500;
+            case 'darkling5':
+                return 2000;
+            case 'darkling6':
+                return 2000;
+            case 'darkling7':
+                return 2000;
             case 'darkling8':
-                return 1800;
+                return 1500;
             case 'darkling10':
                 return 1500;
             default:

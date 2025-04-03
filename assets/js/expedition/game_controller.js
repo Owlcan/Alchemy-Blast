@@ -70,7 +70,7 @@ currentRound: 1,
                 width: 20,
                 height: 20,
                 speed: 10,
-                damage: 10,
+                damage: 1,
                 color: '#ffffff'
             },
             explosive: {
@@ -2091,10 +2091,11 @@ currentRound: 1,
                 }
             }
             
-                    // Remove projectiles that are off-screen
-                    if (projectile.y < -2000 || projectile.y > 2000 || 
-                        projectile.x < -1000 || projectile.x > 1000) {
-                        this.projectiles.player.splice(i, 1);
+            // Remove projectiles that are off-screen - MUCH MORE GENEROUS BOUNDS
+            // FIXED: Greatly increased the vertical bounds especially for projectiles going upward
+            if (projectile.y < -3000 || projectile.y > 2000 || 
+                projectile.x < -1000 || projectile.x > 1000) {
+                this.projectiles.player.splice(i, 1);
             }
         }
         
@@ -2118,8 +2119,11 @@ currentRound: 1,
             }
             
             // Remove projectiles that are off-screen
-            if (projectile.y < -100 || projectile.y > 1060 || 
-                projectile.x < -100 || projectile.x > 900) {
+            // FIXED: MUCH more generous boundary for vertical coordinates
+            // Only remove projectiles that are FAR below the player (y > 1500)
+            // Allow ANY Y value above the player (negative y) to exist
+            if (projectile.y > 1500 || 
+                projectile.x < -1000 || projectile.x > 1000) {
                 this.projectiles.enemy.splice(i, 1);
             }
         }
@@ -2470,8 +2474,9 @@ currentRound: 1,
                 
                 for (let i = this.enemies.length - 1; i >= 0; i--) {
                     if (this.enemies[i].isFlyby && !remainingIds.includes(this.enemies[i].id)) {
+                        // Just remove the enemy without adding points
                         this.enemies.splice(i, 1);
-                        // Don't need to update enemiesRemaining since these aren't part of the wave count
+                        // No need to update enemiesRemaining since these aren't part of the wave count
                     }
                 }
             }
