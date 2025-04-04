@@ -139,9 +139,9 @@ class Renderer {
             this.canvas.width / 2, this.canvas.height / 2, this.canvas.width
         );
         
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-        gradient.addColorStop(0.3, 'rgba(255, 240, 180, 0.7)');
-        gradient.addColorStop(1, 'rgba(255, 200, 100, 0)');
+        gradient.addColorStop(0, 'rgba(81, 191, 255, 0.8)');
+        gradient.addColorStop(0.3, 'rgba(81, 171, 235, 0.8)');
+        gradient.addColorStop(1, 'rgba(18, 56, 128, 0.8)');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -165,7 +165,7 @@ class Renderer {
         ctx.globalAlpha = alpha;
         
         // Draw halo effect
-        ctx.fillStyle = 'rgba(255, 240, 150, 0.8)';
+        ctx.fillStyle = 'rgba(81, 190, 240, 0.8)';
         ctx.beginPath();
         ctx.arc(
             this.canvas.width / 2 + position.x,
@@ -177,7 +177,7 @@ class Renderer {
         ctx.fill();
         
         // Add glow effect
-        ctx.shadowColor = 'rgba(255, 200, 100, 0.9)';
+        ctx.shadowColor = 'rgba(81, 150, 200, 0.9)';
         ctx.shadowBlur = 20;
         ctx.beginPath();
         ctx.arc(

@@ -6,10 +6,15 @@ class ProjectileManager {
         this.game = game;
         this.playerProjectiles = [];
         this.enemyProjectiles = [];
+        this.seekingProjectiles = []; // For Aliza's seeking projectiles
         
         // Special projectile effects
         this.beams = [];        // For Shinshi's beam attacks
         this.specialBeams = []; // For Shinshi's special beam attacks
+        this.dereSpecialShot = null; // For Dere's special attack animation
+        
+        // Store reference to audio manager
+        this.audioManager = game.audioManager || null;
     }
     
     /**
@@ -19,8 +24,10 @@ class ProjectileManager {
     update(deltaTime) {
         this.updatePlayerProjectiles(deltaTime);
         this.updateEnemyProjectiles(deltaTime);
+        this.updateSeekingProjectiles(deltaTime);
         this.updateBeams(deltaTime);
         this.updateSpecialBeams(deltaTime);
+        this.updateDereSpecialShot(deltaTime);
         
         this.checkCollisions();
     }
@@ -77,6 +84,109 @@ class ProjectileManager {
     }
     
     /**
+     * Update seeking projectiles (Aliza's special attack)
+     * @param {number} deltaTime - Time elapsed since last update
+     */
+    updateSeekingProjectiles(deltaTime) {
+        const gameController = this.game.gameController;
+        
+        for (let i = this.seekingProjectiles.length - 1; i >= 0; i--) {
+            const projectile = this.seekingProjectiles[i];
+            
+            // Check if the projectile lifetime has expired
+            if (projectile.lifespan && Date.now() - projectile.createdAt > projectile.lifespan) {
+                // Create a fade-out effect before removing
+                this.game.particleSystem.createHitEffect(projectile.x, projectile.y, 'fade');
+                this.seekingProjectiles.splice(i, 1);
+                continue;
+            }
+            
+            // Check if projectile has orbit properties (orbital projectile)
+            if (projectile.orbit) {
+                // Update orbit position
+                projectile.orbit.angle += projectile.orbit.speed;
+                
+                // Update orbital projectile position
+                projectile.x = projectile.orbit.center.x + Math.cos(projectile.orbit.angle) * projectile.orbit.radius;
+                projectile.y = projectile.orbit.center.y + Math.sin(projectile.orbit.angle) * projectile.orbit.radius;
+                
+                // Update orbital center to follow player
+                projectile.orbit.center.x = gameController.player.position.x;
+                projectile.orbit.center.y = gameController.player.position.y;
+                
+                // Create trail particle effect
+                if (Math.random() < 0.2) {
+                    this.game.particleSystem.createTrailEffect(projectile.x, projectile.y, 'orbital');
+                }
+            } else {
+                // Standard seeking projectile behavior
+                // Find the closest enemy to target
+                let closestEnemy = null;
+                let closestDistance = Infinity;
+                
+                for (const enemy of gameController.enemies) {
+                    if (!enemy.destroyed) {
+                        const dx = enemy.position.x - projectile.x;
+                        const dy = enemy.position.y - projectile.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestEnemy = enemy;
+                        }
+                    }
+                }
+                
+                // If there's a target, adjust trajectory to seek it
+                if (closestEnemy) {
+                    const dx = closestEnemy.position.x - projectile.x;
+                    const dy = closestEnemy.position.y - projectile.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Normalize direction vector
+                    const dirX = dx / distance;
+                    const dirY = dy / distance;
+                    
+                    // Gradually adjust velocity towards target
+                    const seekingStrength = projectile.seekSpeed || 0.15;
+                    projectile.vx += dirX * seekingStrength;
+                    projectile.vy += dirY * seekingStrength;
+                    
+                    // Limit maximum speed
+                    const speed = Math.sqrt(projectile.vx * projectile.vx + projectile.vy * projectile.vy);
+                    if (speed > (projectile.maxSpeed || 3)) {
+                        projectile.vx = (projectile.vx / speed) * (projectile.maxSpeed || 3);
+                        projectile.vy = (projectile.vy / speed) * (projectile.maxSpeed || 3);
+                    }
+                }
+                
+                // Update position for non-orbital projectiles
+                projectile.x += projectile.vx * (deltaTime / 16);
+                projectile.y += projectile.vy * (deltaTime / 16);
+                
+                // Create trail particle effect
+                if (Math.random() < 0.3) {
+                    this.game.particleSystem.createTrailEffect(projectile.x, projectile.y, 'seeking');
+                }
+            }
+            
+            // Handle rotation for all seeking projectiles
+            if (projectile.rotationSpeed) {
+                projectile.rotation = (projectile.rotation || 0) + projectile.rotationSpeed * (deltaTime / 16);
+            }
+            
+            // Check if non-orbital projectile is off-screen
+            if (!projectile.orbit) {
+                const canvas = this.game.canvas || { width: 800, height: 960 };
+                if (projectile.y < -canvas.height || projectile.y > canvas.height * 2 || 
+                    projectile.x < -canvas.width || projectile.x > canvas.width * 2) {
+                    this.seekingProjectiles.splice(i, 1);
+                }
+            }
+        }
+    }
+    
+    /**
      * Update beam attacks (for Shinshi character)
      * @param {number} deltaTime - Time elapsed since last update
      */
@@ -106,6 +216,22 @@ class ProjectileManager {
     }
     
     /**
+     * Update Dere's special shot animation
+     * @param {number} deltaTime - Time elapsed since last update
+     */
+    updateDereSpecialShot(deltaTime) {
+        if (this.dereSpecialShot) {
+            // Move the shot upward
+            this.dereSpecialShot.y -= this.dereSpecialShot.speed * (deltaTime / 16);
+            
+            // Check if animation is complete (shot has left the screen)
+            if (this.dereSpecialShot.y + this.dereSpecialShot.height < -this.game.canvas.height) {
+                this.dereSpecialShot = null;
+            }
+        }
+    }
+    
+    /**
      * Create a player projectile
      * @param {number} x - X position
      * @param {number} y - Y position
@@ -128,6 +254,89 @@ class ProjectileManager {
         };
         
         this.playerProjectiles.push(projectile);
+        
+        // Play sound effect if audio manager is available
+        if (this.audioManager && !options.silent) {
+            this.audioManager.playSfx('playerShot');
+        }
+        
+        return projectile;
+    }
+    
+    /**
+     * Create a seeking projectile (Aliza's special attack)
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {Object} options - Additional projectile options
+     * @returns {Object} The created projectile
+     */
+    createSeekingProjectile(x, y, options = {}) {
+        // Initial velocity (can be random or targeted)
+        const angle = options.angle || (Math.random() * Math.PI * 0.5) - (Math.PI * 0.25);
+        const speed = options.initialSpeed || 1.5; // Start slow
+        
+        const projectile = {
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            width: options.width || 30,
+            height: options.height || 30,
+            damage: options.damage || 2, // Higher damage
+            sprite: options.sprite || 'alizaShot3', // Use Aliza's special projectile sprite
+            maxSpeed: options.maxSpeed || 3, // Maximum speed cap
+            passthrough: true, // Enables pass-through behavior
+            createdAt: Date.now(),
+            rotation: 0,
+            rotationSpeed: 0.2 // Gives the projectile a spinning effect
+        };
+        
+        this.seekingProjectiles.push(projectile);
+        return projectile;
+    }
+    
+    /**
+     * Create an orbital projectile that circles around the player (Aliza's special attack)
+     * @param {number} x - Initial X position
+     * @param {number} y - Initial Y position
+     * @param {Object} options - Additional projectile options
+     * @returns {Object} The created orbital projectile
+     */
+    createOrbitalProjectile(x, y, options = {}) {
+        const orbitCenter = {
+            x: this.game.gameController.player.position.x,
+            y: this.game.gameController.player.position.y
+        };
+        
+        // Calculate initial angle based on position relative to center
+        const dx = x - orbitCenter.x;
+        const dy = y - orbitCenter.y;
+        const initialAngle = Math.atan2(dy, dx);
+        
+        const projectile = {
+            x, // Current position
+            y,
+            width: options.width || 40,
+            height: options.height || 40,
+            damage: options.damage || 5,
+            sprite: options.sprite || 'alizaShot2',
+            orbit: {
+                center: orbitCenter,
+                radius: options.orbitRadius || 40,
+                angle: initialAngle,
+                speed: options.orbitSpeed || 0.05
+            },
+            passthrough: options.passThrough || false,
+            maxTargets: options.maxTargets || 3,
+            targetsHit: 0,
+            createdAt: Date.now(),
+            lifespan: options.lifespan || 3000, // Default 3s lifespan
+            rotation: 0,
+            rotationSpeed: 0.1
+        };
+        
+        // Add to seeking projectiles - they share similar behavior
+        this.seekingProjectiles.push(projectile);
         return projectile;
     }
     
@@ -153,6 +362,11 @@ class ProjectileManager {
         const speed = options.speed || 3;
         const vx = (dx / dist) * speed;
         const vy = (dy / dist) * speed;
+        
+        // Play sound effect if audio manager is available
+        if (this.audioManager && !options.silent) {
+            this.audioManager.playSfx('enemyShot');
+        }
         
         return this.createEnemyProjectileWithVelocity(x, y, vx, vy, options);
     }
@@ -268,6 +482,30 @@ class ProjectileManager {
     }
     
     /**
+     * Create Dere's special attack animation
+     * This creates a visual effect alongside the actual game mechanic
+     * @returns {Object} The created special shot object
+     */
+    createDereSpecialShot() {
+        // Get canvas dimensions
+        const canvas = this.game.canvas || { width: 800, height: 960 };
+        
+        // Create special shot object
+        this.dereSpecialShot = {
+            x: this.game.gameController.player.position.x,
+            y: canvas.height, // Start from bottom of screen
+            width: 100, // Width of the special shot
+            height: canvas.height, // Height spans the full screen
+            speed: 20, // Animation speed
+            sprite: 'derespecialshot', // Sprite name
+            createdAt: Date.now(),
+            duration: 1500 // Duration in milliseconds
+        };
+        
+        return this.dereSpecialShot;
+    }
+    
+    /**
      * Check for collisions between projectiles and targets
      */
     checkCollisions() {
@@ -286,7 +524,12 @@ class ProjectileManager {
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 // Adjust hitbox based on enemy type
-                const enemyHitboxSize = enemy.type.includes('boss') ? 40 : 25;
+                const enemyHitboxSize = 
+                    enemy.type === 'darklingboss3' ? 90 : // Much larger hitbox for final boss
+                    enemy.type === 'darkling11' || enemy.type === 'darkling12' ? 60 : // Larger hitbox for vanguard minions
+                    enemy.type === 'darkling13' ? 50 : // Slightly smaller than other vanguard minions
+                    enemy.type.includes('boss') ? 40 : 25; // Standard sizes for other enemies
+                
                 const projectileHitboxSize = 15;
                 
                 if (distance < enemyHitboxSize + projectileHitboxSize) {
@@ -299,6 +542,11 @@ class ProjectileManager {
                     // Create hit particle effect
                     this.game.particleSystem.createHitEffect(projectile.x, projectile.y);
                     
+                    // Play hit sound
+                    if (this.audioManager) {
+                        this.audioManager.playSfx('hit');
+                    }
+                    
                     // Check if enemy was defeated
                     if (enemy.health <= 0) {
                         // Create defeat effect
@@ -306,6 +554,11 @@ class ProjectileManager {
                             enemy.position.x, 
                             enemy.position.y
                         );
+                        
+                        // Play explosion sound
+                        if (this.audioManager) {
+                            this.audioManager.playSfx('explosion');
+                        }
                         
                         // Check for potion drop
                         const potionDrop = gameController.monsterLogic.getPotionDrop(enemy.type);
@@ -329,6 +582,69 @@ class ProjectileManager {
             // Remove hit projectiles
             if (this.playerProjectiles[i].hit) {
                 this.playerProjectiles.splice(i, 1);
+            }
+        }
+        
+        // Check seeking projectiles vs enemies (special passthrough behavior)
+        for (let i = this.seekingProjectiles.length - 1; i >= 0; i--) {
+            const projectile = this.seekingProjectiles[i];
+            
+            for (const enemy of gameController.enemies) {
+                if (enemy.destroyed) continue;
+                
+                // Calculate distance
+                const dx = enemy.position.x - projectile.x;
+                const dy = enemy.position.y - projectile.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Adjust hitbox based on enemy type
+                const enemyHitboxSize = enemy.type.includes('boss') ? 40 : 25;
+                const projectileHitboxSize = 20;
+                
+                if (distance < enemyHitboxSize + projectileHitboxSize) {
+                    // Deal damage to enemy (don't remove projectile due to passthrough)
+                    enemy.health -= projectile.damage;
+                    
+                    // Create hit particle effect
+                    this.game.particleSystem.createHitEffect(
+                        enemy.position.x, 
+                        enemy.position.y, 
+                        'seeking'
+                    );
+                    
+                    // Prevent multiple hits to the same enemy in rapid succession
+                    if (!enemy.lastSeekingHitTime || Date.now() - enemy.lastSeekingHitTime > 500) {
+                        enemy.lastSeekingHitTime = Date.now();
+                        
+                        // Check if enemy was defeated
+                        if (enemy.health <= 0) {
+                            // Create defeat effect
+                            this.game.particleSystem.createExplosion(
+                                enemy.position.x, 
+                                enemy.position.y
+                            );
+                            
+                            // Play explosion sound
+                            if (this.audioManager) {
+                                this.audioManager.playSfx('explosion');
+                            }
+                            
+                            // Check for potion drop
+                            const potionDrop = gameController.monsterLogic.getPotionDrop(enemy.type);
+                            if (potionDrop) {
+                                gameController.addPowerup(
+                                    enemy.position.x,
+                                    enemy.position.y,
+                                    potionDrop.type
+                                );
+                            }
+                            
+                            // Add score and mark enemy for removal
+                            gameController.gameState.score += gameController.monsterLogic.getPoints(enemy.type);
+                            enemy.destroyed = true;
+                        }
+                    }
+                }
             }
         }
         
@@ -358,6 +674,11 @@ class ProjectileManager {
                         player.position.x,
                         player.position.y
                     );
+                    
+                    // Play hit sound if not handled by game controller
+                    if (this.audioManager && !player.isInvulnerable) {
+                        // Let game controller handle the specific character hit sounds
+                    }
                 }
                 
                 // Remove hit projectile
@@ -393,6 +714,11 @@ class ProjectileManager {
                                     enemy.position.x, 
                                     enemy.position.y
                                 );
+                                
+                                // Play explosion sound
+                                if (this.audioManager) {
+                                    this.audioManager.playSfx('explosion');
+                                }
                                 
                                 // Add score and mark enemy for removal
                                 gameController.gameState.score += gameController.monsterLogic.getPoints(enemy.type);
@@ -432,6 +758,11 @@ class ProjectileManager {
                                     enemy.position.y
                                 );
                                 
+                                // Play explosion sound
+                                if (this.audioManager) {
+                                    this.audioManager.playSfx('explosion');
+                                }
+                                
                                 // Add score and mark enemy for removal
                                 gameController.gameState.score += gameController.monsterLogic.getPoints(enemy.type);
                                 enemy.destroyed = true;
@@ -451,6 +782,7 @@ class ProjectileManager {
         return {
             player: this.playerProjectiles,
             enemy: this.enemyProjectiles,
+            seeking: this.seekingProjectiles,
             beams: this.beams,
             specialBeams: this.specialBeams
         };

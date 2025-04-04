@@ -61,11 +61,27 @@ class GameRenderer {
                 this.loadSprite(`${character}_${type}`, characterSprites[character][type]);
             }
             
+            // Load victory images for all three characters
+            this.loadSprite(`${character}victory`, `assets/images/darklings/${character}victory.png`);
+            
             // Load shot sprites
             characterSprites[character].shots.forEach((shot, index) => {
                 this.loadSprite(`${character}_shot_${index}`, shot);
             });
         }
+        
+        // Load Dere's shot sprites
+        this.loadSprite('dereshot1', 'assets/images/darklings/dereshot1.png');
+        this.loadSprite('dereshot2', 'assets/images/darklings/dereshot2.png');
+        this.loadSprite('dereshot3', 'assets/images/darklings/dereshot3.png');
+        this.loadSprite('derespecialshot', 'assets/images/darklings/derespecialshot.png');
+        
+        // Load Aliza's shot sprites
+        this.loadSprite('alizashot1', 'assets/images/darklings/alizashot1.png');
+        this.loadSprite('alizashot2', 'assets/images/darklings/alizashot2.png');
+        this.loadSprite('alizashot3', 'assets/images/darklings/alizashot3.png');
+        this.loadSprite('alizashotimpact1', 'assets/images/darklings/alizashotimpact1.png');
+        this.loadSprite('alizashotimpact2', 'assets/images/darklings/alizashotimpact2.png');
         
         // Load Shinshi's special beam attack sprites
         this.loadSprite('shinbeam1', 'assets/images/darklings/shinbeam1.png');
@@ -75,7 +91,7 @@ class GameRenderer {
         this.loadSprite('shinspecialbeamrightside', 'assets/images/darklings/shinspecialbeamrightside.png');
         
         // Load enemy sprites - corrected naming convention from MOB to mob (lowercase)
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 13; i++) { // Increased to include darkling11, darkling12, darkling13
             this.loadSprite(`darkling${i}`, `assets/images/darklings/darklingmob${i}.png`);
         }
         
@@ -271,6 +287,7 @@ class GameRenderer {
         const gameState = this.gameController.getGameState();
         
         if (!gameState.isActive) {
+            // Check if it's game over or just character selection
             if (gameState.gameOver) {
                 this.renderGameOver(gameState);
             } else {
@@ -290,13 +307,64 @@ class GameRenderer {
         this.renderEnemies(gameState.enemies, timestamp);
         this.renderPlayer(gameState.player, gameState.selectedCharacter);
         this.renderProjectiles(gameState.projectiles);
+        this.renderImpactEffects();
         this.renderPowerups(gameState.powerups);
         
         // Restore normal coordinates for UI
         this.ctx.restore();
         
+        // Check if Dere's special attack is active
+        // First check gameState.specialAttack, then fallback to gameController.specialAttack
+        const specialAttack = gameState.specialAttack || 
+                            (this.gameController && this.gameController.specialAttack);
+        
+        if (specialAttack && gameState.selectedCharacter === 'dere') {
+            // Render the screen flash
+            this.renderScreenFlash(specialAttack);
+        }
+        
         // Render UI elements
         this.renderUI(gameState);
+    }
+    
+    /**
+     * Render a screen flash effect for Dere's special attack
+     * @param {Object} specialAttack - Special attack object with timing information
+     */
+    renderScreenFlash(specialAttack) {
+        // Calculate flash intensity based on time elapsed
+        const elapsed = Date.now() - specialAttack.startTime;
+        let alpha = 0;
+        
+        // Flash timing: quick build-up (0-200ms), hold (200-600ms), fade out (600-1000ms)
+        if (elapsed < 200) {
+            // Build up quickly
+            alpha = (elapsed / 200) * specialAttack.intensity;
+        } else if (elapsed < 600) {
+            // Hold at full intensity
+            alpha = specialAttack.intensity;
+        } else if (elapsed < 1000) {
+            // Fade out
+            alpha = (1 - (elapsed - 600) / 400) * specialAttack.intensity;
+        }
+        
+        if (alpha <= 0) return;
+        
+        // Draw full-screen flash with gradient
+        const gradient = this.ctx.createRadialGradient(
+            this.canvas.width / 2, this.canvas.height / 2, 0,
+            this.canvas.width / 2, this.canvas.height / 2, this.canvas.width
+        );
+        
+        gradient.addColorStop(0, `rgba(180, 220, 255, ${alpha})`);
+        gradient.addColorStop(0.3, `rgba(150, 200, 255, ${alpha * 0.9})`);
+        gradient.addColorStop(0.6, `rgba(100, 180, 255, ${alpha * 0.6})`);
+        gradient.addColorStop(1, `rgba(30, 150, 255, ${alpha * 0.2})`);
+        
+        this.ctx.save();
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.restore();
     }
     
     /**
@@ -552,10 +620,33 @@ class GameRenderer {
                 // Add slight bobbing animation
                 const bobOffset = Math.sin(timestamp * 0.003 + enemy.position.x * 0.1) * 3;
                 
+                // Determine scaling factor based on enemy type
+                let scaleFactor = 1.0;
+                
+                // Special scaling for final boss and its minions
+                if (enemy.type === 'darklingboss3') {
+                    // Final boss at 100% of native resolution (no scaling down)
+                    scaleFactor = 1.0;
+                } else if (enemy.type.includes('darkling11') || enemy.type.includes('darkling12') || enemy.type.includes('darkling13')) {
+                    // Special vanguard minions at 2.5x normal size
+                    scaleFactor = 2.5;
+                } else if (enemy.type.includes('boss')) {
+                    // Other bosses get standard boss scaling
+                    scaleFactor = 1.0;
+                } else {
+                    // Regular enemy scaling
+                    scaleFactor = 1.0;
+                }
+                
                 // Scale down oversized sprites
-                const maxDimension = enemy.type.includes('boss') ? 96 : 48; // Larger for bosses
-                let width = sprite.width;
-                let height = sprite.height;
+                const maxDimension = enemy.type === 'darklingboss3' ? 200 : // Much larger for final boss
+                                    enemy.type.includes('darkling11') || 
+                                    enemy.type.includes('darkling12') || 
+                                    enemy.type.includes('darkling13') ? 120 : // Larger for vanguard minions
+                                    enemy.type.includes('boss') ? 96 : 48; // Standard sizes for other enemies
+                
+                let width = sprite.width * scaleFactor;
+                let height = sprite.height * scaleFactor;
                 
                 // Scale down if the sprite is too large
                 if (width > maxDimension || height > maxDimension) {
@@ -620,154 +711,248 @@ class GameRenderer {
      * @param {Object} projectiles - Object with player and enemy projectiles
      */
     renderProjectiles(projectiles) {
-        // Get current game state for character info
-        const gameState = this.gameController.getGameState();
-        const character = gameState.selectedCharacter;
-        
         // Render player projectiles
-        for (const projectile of projectiles.player) {
-            const spriteIndex = projectile.sprite || 0;
-            const spriteName = `${character}_shot_${spriteIndex}`;
-            const sprite = this.sprites[spriteName];
-            
-            if (sprite && sprite.complete) {
-                // Scale factor - make Aliza's projectiles half size
-                const scaleFactor = character === 'aliza' ? 0.5 : 1;
-                
-                // Calculate the projectile dimensions with the proper scale factor
-                const width = sprite.width * scaleFactor;
-                const height = sprite.height * scaleFactor;
-                
-                // Counteract the enemy rendering offset for player projectiles
-                // This ensures player projectiles appear at the correct visual position
-                const projectileY = projectile.y;
-                
-                // For Aliza, create a spread pattern to ensure coverage across the screen
-                if (character === 'aliza' && projectile.isSpecialAttack) {
-                    // Draw a wider pattern for Aliza's special attacks
-                    // We'll draw 3 projectiles side by side to create a spread
-                    const spreadOffsets = [-width*1.5, 0, width*1.5]; // Left, center, right
-                    
-                    for (const offset of spreadOffsets) {
-                        this.ctx.drawImage(
-                            sprite,
-                            projectile.x + offset - width / 2,
-                            projectileY - height / 2,  // Use the offset-corrected Y position
-                            width,
-                            height
-                        );
-                    }
+        if (projectiles.player && projectiles.player.length > 0) {
+            for (const projectile of projectiles.player) {
+                // Get appropriate sprite based on projectile type
+                let sprite;
+                if (typeof projectile.sprite === 'string') {
+                    sprite = this.sprites[projectile.sprite];
                 } else {
-                    // Standard single projectile rendering
-                    this.ctx.drawImage(
-                        sprite,
-                        projectile.x - width / 2,
-                        projectileY - height / 2,  // Use the offset-corrected Y position
-                        width,
-                        height
-                    );
+                    // Get character-specific sprite
+                    const character = this.gameController.gameState.selectedCharacter;
+                    if (character === 'dere') {
+                        if (!this.playerLogic) this.playerLogic = new PlayerLogic();
+                        const spriteName = this.playerLogic.getShotSprite('dere', this.gameController.player.powerLevel);
+                        sprite = this.sprites[spriteName];
+                    } else {
+                        // Use existing sprite logic for other characters
+                        const shotIndex = Math.min(2, projectile.sprite || 0);
+                        sprite = this.sprites[`shot${shotIndex + 1}`];
+                    }
                 }
-            } else {
-                // Fallback if sprite not found - draw a simple colored circle
-                // Also apply the offset correction for the fallback
-                const projectileY = projectile.y;
-                
-                this.ctx.fillStyle = '#00ffff';
-                this.ctx.beginPath();
-                this.ctx.arc(projectile.x, projectileY, 5, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-        }
-
-        // Render enemy projectiles
-        if (projectiles.enemy && projectiles.enemy.length > 0) {
-            for (const projectile of projectiles.enemy) {
-                // Get the actual sprite name from the projectile object or default to darklingshot1
-                const spriteName = projectile.sprite || 'darklingshot1';
-                const sprite = this.sprites[spriteName];
-                
-                // Calculate the adjusted position for enemy projectiles
-                // No Y adjustment needed since enemy projectiles use the same coordinate system as player projectiles
-                const x = projectile.x;
-                const y = projectile.y;
                 
                 if (sprite && sprite.complete) {
-                    // Save context for rotation if needed
-                    this.ctx.save();
-                    
-                    // Calculate dimensions and position
-                    const width = projectile.width || 30;
-                    const height = projectile.height || 30;
-                    
-                    // Handle rotation for projectiles that should rotate
-                    if (projectile.rotate && projectile.rotation !== undefined) {
-                        // Rotate around the center of the projectile
-                        this.ctx.translate(x, y);
-                        this.ctx.rotate(projectile.rotation);
-                        
-                        // Draw at the origin (since we've translated)
-                        this.ctx.drawImage(
-                            sprite,
-                            -width / 2,
-                            -height / 2,
-                            width,
-                            height
-                        );
-                    } else {
-                        // Draw without rotation
-                        this.ctx.drawImage(
-                            sprite,
-                            x - width / 2,
-                            y - height / 2,
-                            width,
-                            height
-                        );
-                    }
-                    
-                    // Restore context after rotation
-                    this.ctx.restore();
-                } else {
-                    // Fallback if sprite not found
-                    this.ctx.fillStyle = '#ff5500'; // Orange/red for enemy projectiles
-                    this.ctx.beginPath();
-                    this.ctx.arc(
-                        x, 
-                        y, 
-                        (projectile.width || 15) / 2, 
-                        0, 
-                        Math.PI * 2
+                    this.ctx.drawImage(
+                        sprite, 
+                        projectile.x - sprite.width / 2, 
+                        projectile.y - sprite.height / 2
                     );
-                    this.ctx.fill();
-                    
-                    // Add "points" to make it look more like a projectile
-                    this.ctx.strokeStyle = '#ff7700';
-                    this.ctx.lineWidth = 2;
-                    const points = 3;
-                    for (let i = 0; i < points; i++) {
-                        const angle = (i / points) * Math.PI * 2;
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(x, y);
-                        this.ctx.lineTo(
-                            x + Math.cos(angle) * (projectile.width || 15),
-                            y + Math.sin(angle) * (projectile.height || 15)
-                        );
-                        this.ctx.stroke();
-                    }
                 }
             }
         }
-
-        // Render Shinshi's beam attacks if any exist
-        if (character === 'shinshi' && projectiles.beams && projectiles.beams.length > 0) {
+        
+        // Render enemy projectiles
+        if (projectiles.enemy) {
+            for (const projectile of projectiles.enemy) {
+                // Render a sprite or a fallback circle
+                const sprite = this.sprites[projectile.sprite];
+                if (sprite && sprite.complete) {
+                    // Apply rotation if the projectile should rotate
+                    if (projectile.rotate) {
+                        this.ctx.save();
+                        this.ctx.translate(projectile.x, projectile.y);
+                        this.ctx.rotate(projectile.rotation || 0);
+                        this.ctx.drawImage(sprite, -projectile.width / 2, -projectile.height / 2, projectile.width, projectile.height);
+                        this.ctx.restore();
+                    } else {
+                        this.ctx.drawImage(sprite, projectile.x - projectile.width / 2, projectile.y - projectile.height / 2, projectile.width, projectile.height);
+                    }
+                } else {
+                    // Fallback rendering if sprite not found
+                    this.ctx.fillStyle = '#FF0000';
+                    this.ctx.beginPath();
+                    this.ctx.arc(projectile.x, projectile.y, 5, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+        }
+        
+        // Render beams (for Shinshi)
+        if (projectiles.beams) {
             this.renderBeams(projectiles.beams);
         }
-
-        // Render Shinshi's special beam attacks if any exist
-        if (character === 'shinshi' && projectiles.specialBeams && projectiles.specialBeams.length > 0) {
+        
+        // Render special beams (for Shinshi's special attack)
+        if (projectiles.specialBeams) {
             this.renderSpecialBeams(projectiles.specialBeams);
         }
+        
+        // Render Dere's special shot if it exists
+        if (projectiles.dereSpecialShot) {
+            const shot = projectiles.dereSpecialShot;
+            const sprite = this.sprites[shot.sprite];
+            
+            if (sprite && sprite.complete) {
+                // Calculate alpha for fade effect based on lifetime
+                const elapsed = Date.now() - shot.createdAt;
+                const alpha = Math.min(1, 1 - (elapsed / shot.duration));
+                
+                // Save context for transparency
+                this.ctx.save();
+                this.ctx.globalAlpha = alpha;
+                
+                // Draw the special shot sprite
+                this.ctx.drawImage(
+                    sprite,
+                    shot.x - (shot.width / 2),
+                    shot.y - shot.height,
+                    shot.width,
+                    shot.height
+                );
+                
+                // Restore context
+                this.ctx.restore();
+            }
+        }
     }
-
+    
+    /**
+     * Check if a projectile has collided with an enemy and show impact effect
+     * @param {Object} projectile - The projectile to check
+     * @param {Object} enemy - The enemy to check collision with
+     * @returns {boolean} - True if collision occurred, false otherwise
+     */
+    checkProjectileCollision(projectile, enemy) {
+        const dx = enemy.position.x - projectile.x;
+        const dy = enemy.position.y - projectile.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Collision radius depends on enemy type
+        const collisionRadius = enemy.type.includes('boss') ? 40 : 25;
+        
+        if (distance < collisionRadius) {
+            // Mark projectile as collided to show impact
+            if (projectile.hasImpact) {
+                projectile.collided = true;
+                
+                // Create impact effect based on projectile type
+                if (projectile.impactSprite && this.sprites[projectile.impactSprite]) {
+                    // Use the projectile's specific impact sprite
+                    this.createImpactEffect(
+                        enemy.position.x, 
+                        enemy.position.y,
+                        projectile.impactSprite
+                    );
+                }
+            }
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Create impact effect at specified position
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {string} impactSprite - Name of the impact sprite to use
+     */
+    createImpactEffect(x, y, impactSprite = 'alizashotimpact1') {
+        if (!this.impactEffects) {
+            this.impactEffects = [];
+        }
+        
+        this.impactEffects.push({
+            x: x,
+            y: y,
+            sprite: impactSprite,
+            createdAt: Date.now(),
+            duration: 200 // Impact effect lasts 200ms
+        });
+    }
+    
+    /**
+     * Render impact effects
+     */
+    renderImpactEffects() {
+        if (!this.impactEffects || this.impactEffects.length === 0) return;
+        
+        const now = Date.now();
+        
+        // Filter and render active impact effects
+        this.impactEffects = this.impactEffects.filter(effect => {
+            const elapsed = now - effect.createdAt;
+            if (elapsed < effect.duration) {
+                // Calculate alpha for fade-out
+                const alpha = 1 - (elapsed / effect.duration);
+                this.ctx.globalAlpha = alpha;
+                
+                const sprite = this.sprites[effect.sprite];
+                if (sprite && sprite.complete) {
+                    this.ctx.drawImage(
+                        sprite,
+                        effect.x - sprite.width / 2,
+                        effect.y - sprite.height / 2
+                    );
+                }
+                
+                this.ctx.globalAlpha = 1.0;
+                return true; // Keep this effect
+            }
+            return false; // Remove this effect
+        });
+    }
+    
+    /**
+     * Render Shinshi's special attack (vertical beams) - properly centered
+     * @param {Array} specialBeams - Array of special beam objects 
+     */
+    renderSpecialBeams(specialBeams) {
+        if (!specialBeams || specialBeams.length === 0) return;
+        
+        // Get beam sprites
+        const leftBeamSprite = this.sprites['shinspecialbeamleftside'];
+        const rightBeamSprite = this.sprites['shinspecialbeamrightside'];
+        
+        // Calculate time-based alpha for a fade effect
+        for (const beam of specialBeams) {
+            const lifespan = Date.now() - beam.createdAt;
+            const alpha = 1 - (lifespan / beam.duration);
+            if (alpha <= 0) continue;
+            
+            // Calculate beam position - centered at beam.x
+            const x = beam.x - beam.width / 2;
+            const height = this.canvas.height * 2;
+            
+            // Set transparency for fade out effect
+            this.ctx.globalAlpha = alpha;
+            
+            // Draw beam core
+            this.ctx.fillStyle = 'rgba(120, 255, 255, 0.7)';
+            this.ctx.fillRect(x, -this.canvas.height, beam.width, height);
+            
+            // Draw beam inner glow
+            this.ctx.fillStyle = 'rgba(180, 255, 255, 0.9)';
+            this.ctx.fillRect(x + beam.width * 0.3, -this.canvas.height, beam.width * 0.4, height);
+            
+            // Draw beam edges using sprites if available
+            if (leftBeamSprite && leftBeamSprite.complete) {
+                // Left edge
+                this.ctx.save();
+                this.ctx.translate(x, 0);
+                this.ctx.rotate(-Math.PI / 2); // Rotate to make horizontal sprite vertical
+                const edgeWidth = height;
+                this.ctx.drawImage(leftBeamSprite, -edgeWidth/2, -beam.width/2, edgeWidth, beam.width);
+                this.ctx.restore();
+            }
+            
+            if (rightBeamSprite && rightBeamSprite.complete) {
+                // Right edge
+                this.ctx.save();
+                this.ctx.translate(x + beam.width, 0);
+                this.ctx.rotate(Math.PI / 2); // Rotate to make horizontal sprite vertical
+                const edgeWidth = height;
+                this.ctx.drawImage(rightBeamSprite, -edgeWidth/2, -beam.width/2, edgeWidth, beam.width);
+                this.ctx.restore();
+            }
+        }
+        
+        // Reset transparency
+        this.ctx.globalAlpha = 1.0;
+    }
+    
     /**
      * Render Shinshi's beam attacks
      * @param {Array} beams - Array of beam objects
@@ -810,52 +995,6 @@ class GameRenderer {
                 const distanceToTop = beamY + this.canvas.height/2;
                 this.ctx.fillRect(beam.x - beam.width / 2, beamY - distanceToTop, beam.width, distanceToTop);
                 this.ctx.globalAlpha = 1.0;
-            }
-        }
-    }
-
-    /**
-     * Render Shinshi's special attack (horizontal beams)
-     * @param {Array} specialBeams - Array of special beam objects
-     */
-    renderSpecialBeams(specialBeams) {
-        if (!specialBeams || specialBeams.length === 0) {
-            return;
-        }
-        
-        for (const beam of specialBeams) {
-            // Calculate how long the beam has been active
-            const beamAge = Date.now() - beam.createdAt;
-            // Skip if the beam has expired (duration of 800ms)
-            if (beamAge > 800) continue;
-            // Counteract the enemy rendering offset for special beams
-            const beamY = beam.y;
-            // Get the appropriate sprite based on direction
-            const spriteKey = beam.direction === 'right' ? 
-                'shinspecialbeamrightside' : 'shinspecialbeamleftside';
-            const sprite = this.sprites[spriteKey];
-            if (sprite && sprite.complete) {
-                // Draw the full-width beam
-                this.ctx.drawImage(
-                    sprite,
-                    0,                  // Source X
-                    0,                  // Source Y
-                    sprite.width,       // Source width
-                    sprite.height,      // Source height
-                    -this.canvas.width/2,  // Destination X
-                    beamY - beam.height/2,  // Destination Y with offset correction
-                    this.canvas.width,   // Destination width
-                    beam.height         // Destination height
-                );
-            } else {
-                // Fallback rendering with color - also using offset-corrected Y position
-                this.ctx.fillStyle = '#FFFFFF';
-                this.ctx.fillRect(
-                    -this.canvas.width/2,
-                    beamY - beam.height/2,  // Use the offset-corrected Y position
-                    this.canvas.width,
-                    beam.height
-                );
             }
         }
     }
@@ -1278,8 +1417,18 @@ class GameRenderer {
                         this.canvas.width / 2, 270, 
                         this.textSettings.score, 'center');
                         
+            // Draw character victory sprite
+            const sprite = this.sprites[`${character}victory`];
+            if (sprite && sprite.complete) {
+                this.ctx.drawImage(
+                    sprite,
+                    this.canvas.width / 2 - sprite.width / 2,
+                    300
+                );
+            }
+            
             // Show play again button
-            this.drawButton('Play Again', this.canvas.width / 2, 350, 150, 50);
+            this.drawButton('Play Again', this.canvas.width / 2, 450, 150, 50);
         } else {
             // Game over screen
             this.drawText('GAME OVER', this.canvas.width / 2, 150, 

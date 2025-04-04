@@ -285,7 +285,7 @@ class AlchemyBlaster {
                 // Draw character options with larger dimensions
                 const charWidth = 300;  // Increased from 200
                 const charHeight = 450; // Increased from 300
-                const spacing = 80;     // Decreased from 100 to keep them on screen
+                const spacing = 50;     // Decreased from 100 to keep them on screen
                 const startX = (this.canvas.width - (2 * charWidth + spacing)) / 2;
                 const startY = 90;      // Moved up slightly from 100
 
@@ -559,13 +559,11 @@ class AlchemyBlaster {
             const shieldPercent = this.player.shield / this.player.maxShield;
             let shieldColor;
             if (shieldPercent > 0.7) {
-                shieldColor = 'rgba(0, 150, 255, 0.8)'; // Blue for high shield
+                shieldColor = 'rgba(0, 150, 255, 0.8)';
             } else if (shieldPercent > 0.3) {
-                shieldColor = 'rgba(100, 200, 255, 0.8)'; // Light blue for medium shield
+                shieldColor = 'rgba(0, 100, 255, 0.8)';
             } else {
-                // Pulsing color for low shield
-                const pulseIntensity = Math.abs(Math.sin(Date.now() * 0.005)) * 0.3 + 0.5;
-                shieldColor = `rgba(150, 220, 255, ${pulseIntensity})`;
+                shieldColor = 'rgba(0, 50, 255, 0.8)';
             }
             
             // Draw shield fill
@@ -576,6 +574,31 @@ class AlchemyBlaster {
             this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
             this.ctx.lineWidth = 2;
             this.ctx.strokeRect(shieldX + 70, shieldY - 15, shieldWidth, shieldHeight);
+            
+            // Draw health indicator for Aliza (simple health bar)
+            const healthX = 10;
+            const healthY = this.canvas.height - 60;
+            const healthWidth = 100;
+            const healthHeight = 10;
+            
+            // Draw health text
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = '16px Arial';
+            this.ctx.fillText(`HP: ${this.player.health}`, healthX, healthY - 5);
+            
+            // Draw health bar background
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.fillRect(healthX + 50, healthY - 10, healthWidth, healthHeight);
+            
+            // Draw health bar fill
+            this.ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
+            const healthPercent = this.player.health / 3; // Assuming max health is 3
+            this.ctx.fillRect(healthX + 50, healthY - 10, healthWidth * healthPercent, healthHeight);
+            
+            // Draw health bar border
+            this.ctx.strokeStyle = 'white';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(healthX + 50, healthY - 10, healthWidth, healthHeight);
             
             // Draw burst-fire cooldown indicator
             if (this.player.canBurstFire) {
@@ -699,11 +722,8 @@ class AlchemyBlaster {
                 // Fast flicker in last 5 seconds
                 alpha = 0.3 + Math.abs(Math.sin(now * 0.01)) * 0.5;
             } else if (remaining < 10000) {
-                // Medium flicker between 5-10 seconds left
-                alpha = 0.4 + Math.abs(Math.sin(now * 0.005)) * 0.4;
-            } else if (remaining < 20000) {
-                // Slow flicker between 10-20 seconds left
-                alpha = 0.5 + Math.abs(Math.sin(now * 0.002)) * 0.3;
+                // Slow flicker between 5-10 seconds remaining
+                alpha = 0.5 + Math.abs(Math.sin(now * 0.005)) * 0.3;
             }
             
             // Draw progress arc (vertically depletes from top)
@@ -2213,436 +2233,6 @@ AlchemyBlaster.prototype.drawPlayer = function() {
 AlchemyBlaster.prototype.playerHit = function() {
     const player = this.player;
     
-        this.startTime = Date.now();
-        
-        // Set sprite based on type
-        this.sprite = this.type === 'health' ? 'healthPotion' : 
-                      this.type === 'power' ? 'powerPotion' : 'shieldPotion';
-    }
-
-    update() {
-        // Make the powerup fall downward with a slight bobbing motion
-        this.y += this.fallSpeed;
-        
-        // Add a drifting motion (left/right)
-        this.x += Math.cos(this.angle) * this.driftAmount * 
-                Math.sin(Date.now() * 0.001 + this.bobOffset);
-        
-        // Add bobbing motion
-        const bobY = Math.sin(Date.now() * this.bobSpeed + this.bobOffset) * this.bobAmount;
-        this.y += bobY * 0.1; // Scale the bob amount
-        
-        // Remove if offscreen
-        if (this.y > this.game.canvas.height + 50) { 
-            return true; // Remove this powerup
-        }
-        
-        return false; // Keep this powerup
-    }
-
-    draw() {
-        const sprite = this.game.assets.images[this.sprite];
-        if (sprite) {
-            // Create a nice glowing effect for the potion
-            this.game.ctx.save();
-            // Add glow based on potion type
-            const glowColor = this.type === 'health' ? 'rgba(255, 50, 50, 0.3)' : 
-                             this.type === 'power' ? 'rgba(50,255, 50, 0.3)' : 
-                             'rgba(50, 50, 255, 0.3)';
-            this.game.ctx.shadowColor = glowColor;
-            this.game.ctx.shadowBlur = 10 + Math.sin(Date.now() * 0.005) * 5;
-            // Draw the potion with a slight bobbing animation
-            this.game.ctx.drawImage(
-                sprite, 
-                this.x - this.width/2, 
-                this.y - this.height/2 + Math.sin(Date.now() * 0.005) * 3, 
-                this.width, 
-                this.height 
-            );
-            this.game.ctx.restore();
-        }   
-    }
-
-    collect(player) {
-        // Play a random potion sound
-        this.playPotionSound();
-        // Apply effect based on type
-        switch(this.type) {
-            case 'health':
-                if (player.health < 3) {
-                    player.health++;
-                    console.log("Health potion collected! Health restored to:", player.health);
-                    // Reset alpha for overlays that should be visible
-                    for (let i = 0; i < player.healthOverlays.length; i++) {
-                        if (i < player.health) {
-                            player.healthOverlays[i].alpha = 1;
-                        }
-                    }
-                }
-                break;
-            case 'power':
-                player.powerShotActive = true;
-                player.powerShotEndTime= Date.now() + 30000; // 30 seconds
-                player.originalSpeed = player.speed;
-                player.originalShotCooldown = player.shotCooldown;
-                console.log("Power potion collected! Speed and firepower enhanced for 30 seconds");
-                // Reset alpha for overlays that should be visible
-                if (!this.game.powerUI) {
-                    this.game.powerUI = {
-                        startTime: Date.now(),
-                        duration: 30000 // 30 seconds
-                    };
-                } else {
-                    this.game.powerUI.startTime = Date.now();
-                }
-                break;
-            case 'shield':
-                player.shieldActive = true;
-                player.shieldEndTime = Date.now() + 30000; // 30 seconds
-                console.log("Shield potion collected! Player is invulnerable for 30 seconds");
-                player.speed = player.originalSpeed * 1.1; // 10% movement speed increase
-                // Create shield UI if it doesn't exist
-                if (!this.game.shieldUI) {
-                    this.game.shieldUI = {
-                        startTime: Date.now(),
-                        duration: 30000 // 30 seconds
-                    };
-                } else {
-                    this.game.shieldUI.startTime = Date.now();
-                }
-                break;
-        }
-    }
-
-    playPotionSound() {
-        // Define potential potion sounds
-        const potionSounds = [
-            this.game.assets.sounds.potion1,
-            this.game.assets.sounds.potion2,
-            this.game.assets.sounds.potion3,
-            this.game.assets.sounds.potion4
-        ];
-        // Check if any potion sound is currently playing
-        const isSoundPlaying = potionSounds.some(sound => 
-            !sound.paused && sound.currentTime > 0 && sound.currentTime < sound.duration
-        );
-        // If no potion sound is playing, play a random one
-        if (!isSoundPlaying) {
-            const randomIndex = Math.floor(Math.random() * potionSounds.length);
-            const sound = potionSounds[randomIndex];
-            sound.currentTime = 0;
-            sound.play().catch(e => console.error("Error playing potion sound:", e));
-        }
-    }
-}
-
-// Add inputhandlers to AlchemyBlaster class
-AlchemyBlaster.prototype.handleKeyDown = function(e) {
-    if (e.key === 'ArrowLeft' || e.key === 'a') this.keys.left = true;
-    if (e.key === 'ArrowRight' || e.key === 'd') this.keys.right = true;
-    if (e.key === ' ' || e.key.toLowerCase() === 'q') this.togglePause();
-};
-
-AlchemyBlaster.prototype.handleKeyUp = function(e) {
-    if (e.key === 'ArrowLeft' || e.key === 'a') this.keys.left = false;
-    if (e.key === 'ArrowRight' || e.key === 'd') this.keys.right = false;
-};
-
-AlchemyBlaster.prototype.handleMouseMove = function(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    this.mousePosition.x = e.clientX - rect.left;
-    this.mousePosition.y = e.clientY - rect.top;
-};
-
-AlchemyBlaster.prototype.handleMouseDown = function(e) {
-    if (e.button === 0) { // Left click
-        // In menu state, handle character selection
-        if (this.gameState === 'menu') {
-            const rect = this.canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            // Character selection hitbox
-            const charWidth = 200;
-            const charHeight = 300;
-            const spacing = 100;
-            const startX = (this.canvas.width - (2 * charWidth + spacing)) / 2;
-            const startY = 100;
-
-            // Check if clicked on Dere
-            if (mouseX >= startX && mouseX <= startX + charWidth &&
-                mouseY >= startY && mouseY <= startY + charHeight) {
-                this.selectedCharacter = 'dere';
-                this.initializeSelectedCharacter();
-                return;
-            }
-            
-            // Check if clicked on Aliza
-            if (mouseX >= startX + charWidth + spacing && mouseX <= startX + 2 * charWidth + spacing &&
-                mouseY >= startY && mouseY <= startY + charHeight) {
-                this.selectedCharacter = 'aliza';
-                this.initializeSelectedCharacter();
-                return;
-            }
-        }
-        
-        // If we're playing, handle shooting
-        if (this.gameState === 'playing') {
-            this.isShooting = true;
-            
-            // Handle right click burst fire for Aliza
-            if (e.button === 2 && this.selectedCharacter === 'aliza' && 
-                this.player.canBurstFire && !this.player.isBurstFiring) {
-                this.player.triggerBurstFire();
-            }
-        }
-    } else if (e.button === 1) { // Middle click
-        e.preventDefault();
-        this.togglePause();
-    } else if (e.button === 2) { // Right click
-        e.preventDefault(); // Prevent context menu
-        
-        // Trigger Aliza's burst fire if playing and character is Aliza
-        if (this.gameState === 'playing' && this.selectedCharacter === 'aliza' && 
-            this.player.canBurstFire && !this.player.isBurstFiring) {
-            this.player.triggerBurstFire();
-        }
-    }
-};
-
-AlchemyBlaster.prototype.initializeSelectedCharacter = function() {
-    // Ensure player exists first
-    if (!this.player) {
-        this.player = new Player(this);
-    }
-
-    // Configure character-specific properties
-    if (this.selectedCharacter === 'aliza') {
-        this.player.sprites = {
-            left: 'alizaLeft',
-            right: 'alizaRight'
-        };
-        this.player.projectileSprites = ['alizaShot1', 'alizaShot2', 'alizaShot3'];
-        this.player.projectileSize = 2.5;
-        this.player.projectileSpeed = 11.25;
-        this.player.sounds = {
-            hit: ['alizaHit1', 'alizaHit2'],
-            victory: ['alizaVictory1', 'alizaVictory2'],
-            gameOver: ['alizaGameOver1', 'alizaGameOver2']
-        };
-        this.player.ignoreVisualOverlays = true; // Flag to ignore HP overlays
-        this.player.gameOverImage = 'alizagameover';
-        
-        // Aliza-specific mechanics per requirements
-        this.player.speed = 7.5; // Enhanced movement speed
-        this.player.maxShield = 100;
-        this.player.shield = 100;
-        this.player.shieldRegenRate = 0.05; // Shield regeneration rate per frame
-        this.player.useShield = true; // Flag to use shield instead of health
-        this.player.burstFireCooldown = 3000; // 3 seconds cooldown for burst fire
-        this.player.lastBurstFire = 0;
-        this.player.canBurstFire = true;
-    } else {
-        // Default Dere configuration 
-        this.player.sprites = {
-            left: 'playerLeft',
-            right: 'playerRight'
-        };
-        this.player.gameOverImage = 'deregameover';
-        this.player.projectileSprites = ['shot1', 'shot1a', 'shot1b'];
-        this.player.projectileSize = 1;
-        this.player.projectileSpeed = 15;
-        this.player.sounds = {
-            hit: ['hit1', 'hit2'],
-            victory: ['victory', 'victory1', 'victory2'],
-            gameOver: ['gameOver', 'gameOver1']
-        };
-        this.player.healthOverlays = [
-            { sprite: 'playerHP3', alpha: 1 },
-            { sprite: 'playerHP2', alpha: 1 },
-            { sprite: 'playerHP1', alpha: 1 }
-        ];
-        this.player.useShield = false;
-        this.player.speed = 5; // Regular movement speed
-    }
-
-    // Start the game
-    this.gameState = 'playing';
-    this.spawnWave();
-};
-
-/**
- * Load character-specific assets
- */
-AlchemyBlaster.prototype.loadCharacterAssets = function(character) {
-    if (character === 'aliza') {
-        // Load Aliza's sprites
-        this.loadImage('alizaleft', 'assets/images/darklings/alizaleft.png');
-        this.loadImage('alizaright', 'assets/images/darklings/alizaright.png');
-        this.loadImage('alizashot1', 'assets/images/darklings/alizashot1.png');
-        this.loadImage('alizashot2', 'assets/images/darklings/alizashot2.png');
-        this.loadImage('alizashot3', 'assets/images/darklings/alizashot3.png');
-        this.loadImage('alizagameover', 'assets/images/darklings/alizagameover.png');
-        this.loadImage('alizashotimpact1', 'assets/images/darklings/alizashotimpact1.png');
-        this.loadImage('alizashotimpact2', 'assets/images/darklings/alizashotimpact2.png');
-        
-        // Load Aliza's sounds
-        this.loadSound('alizavictory1', 'assets/sounds/alizavictory1.wav');
-        this.loadSound('alizavictory2', 'assets/sounds/alizavictory2.wav');
-        this.loadSound('alizagameover1', 'assets/sounds/alizagameover1.wav');
-        this.loadSound('alizagameover2', 'assets/sounds/alizagameover2.wav');
-        this.loadSound('alizahit1', 'assets/sounds/alizahit1.wav');
-        this.loadSound('alizahit2', 'assets/sounds/alizahit2.wav');
-    } else {
-        // Load Dere's sprites
-        this.loadImage('dereleft', 'assets/images/darklings/dereleft.png');
-        this.loadImage('dereright', 'assets/images/darklings/dereright.png');
-        this.loadImage('derehp1', 'assets/images/darklings/derehp1.png');
-        this.loadImage('derehp2', 'assets/images/darklings/derehp2.png');
-        this.loadImage('derehp3', 'assets/images/darklings/derehp3.png');
-        this.loadImage('shot1', 'assets/images/darklings/shot1.png');
-        this.loadImage('shot1a', 'assets/images/darklings/shot1a.png');
-        this.loadImage('shot1b', 'assets/images/darklings/shot1b.png');
-        this.loadImage('shotimpact1', 'assets/images/darklings/shotimpact1.png');
-        this.loadImage('shotimpact2', 'assets/images/darklings/shotimpact2.png');
-        this.loadImage('deregameover', 'assets/images/darklings/deregameover.png');
-    }
-    
-    // Load common assets
-    this.loadImage('power_potion', 'assets/images/darklings/power_potion.png');
-    this.loadImage('shield_potion', 'assets/images/darklings/shield_potion.png');
-    this.loadImage('health_potion', 'assets/images/darklings/health_potion.png');
-};
-
-/**
- * Draw the player character
- */
-AlchemyBlaster.prototype.drawPlayer = function() {
-    // Draw player sprite based on selected character
-    const ctx = this.ctx;
-    const player = this.player;
-    
-    // Draw the player sprite
-    const sprite = this.assets.images[player.currentSprite];
-    if (sprite && sprite.complete) {
-        ctx.drawImage(sprite, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
-    }
-    
-    // Draw Dere's health layers if using Dere
-    if (this.selectedCharacter === 'dere') {
-        // Draw health layers on top of player sprite
-        const hp1 = this.assets.images.derehp1;
-        if (hp1 && hp1.complete) {
-            ctx.globalAlpha = 0.8;
-            ctx.drawImage(hp1, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
-            ctx.globalAlpha = 1.0;
-        }
-        
-        if (player.health >= 2) {
-            const hp2 = this.assets.images.derehp2;
-            if (hp2 && hp2.complete) {
-                ctx.globalAlpha = 0.8;
-                ctx.drawImage(hp2, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
-                ctx.globalAlpha = 1.0;
-            }
-        }
-        
-        if (player.health >= 3) {
-            const hp3 = this.assets.images.derehp3;
-            if (hp3 && hp3.complete) {
-                ctx.globalAlpha = 0.8;
-                ctx.drawImage(hp3, player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
-                ctx.globalAlpha = 1.0;
-            }
-        }
-    } else if (this.selectedCharacter === 'aliza' && player.shield > 0) {
-        // Draw Aliza's shield if she has shield remaining
-        const barX = 20;  // Define barX for the shield bar
-        const barY = this.canvas.height - 50; // Define barY for the shield bar
-        const barWidth = 150; // Define barWidth for the shield bar
-        const barHeight = 15; // Define barHeight for the shield bar
-        
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.width / 1.5, 0, Math.PI * 2);
-        
-        // Make shield color and opacity based on shield percentage
-        const shieldPercent = player.shield / player.maxShield;
-        ctx.globalAlpha = Math.max(0.2, shieldPercent);
-        
-        // Create gradient for shield
-        const gradient = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
-        gradient.addColorStop(0, '#3355ff');
-        gradient.addColorStop(0.5, '#33ccff');
-        gradient.addColorStop(1, '#33ffff');
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(barX, barY, barWidth * shieldPercent, barHeight);
-        
-        // Shield bar border
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, barY, barWidth, barHeight);
-        
-        // Label
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'right';
-        ctx.fillText('Shield', barX - 10, barY + barHeight / 2 + 4);
-        
-        // Draw HP indicator
-        ctx.fillStyle = '#ff5555';
-        ctx.fillRect(this.canvas.width - 50, 45, 30, 15);
-        ctx.strokeStyle = '#ffffff';
-        ctx.strokeRect(this.canvas.width - 50, 45, 30, 15);
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'left';
-        ctx.fillText('HP', this.canvas.width - 60, 55);
-    }
-    
-    // Draw special ability cooldown for both characters
-    // This would typically be a burst attack or shield boost
-    const cooldownBarWidth = 100;
-    const cooldownBarHeight = 10;
-    const cooldownBarX = 20;
-    const cooldownBarY = this.canvas.height - 30;
-    
-    // Default cooldown time (5 seconds)
-    const cooldownTime = this.selectedCharacter === 'aliza' ? 3000 : 5000;
-    const cooldownRemaining = Math.max(0, cooldownTime - (Date.now() - (this.lastSpecialUseTime || 0)));
-    const cooldownPercent = 1 - (cooldownRemaining / cooldownTime);
-    
-    // Cooldown bar background
-    ctx.fillStyle = '#333333';
-    ctx.fillRect(cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight);
-    
-    // Cooldown bar fill
-    ctx.fillStyle = cooldownPercent >= 1 ? '#33ff33' : '#ff9933';
-    ctx.fillRect(cooldownBarX, cooldownBarY, cooldownBarWidth * cooldownPercent, cooldownBarHeight);
-    
-    // Cooldown bar border
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cooldownBarX, cooldownBarY, cooldownBarWidth, cooldownBarHeight);
-    
-    // Label
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Special', cooldownBarX, cooldownBarY - 5);
-    
-    // Display a "READY" indicator if special is available
-    if (cooldownPercent >= 1) {
-        ctx.fillStyle = '#33ff33';
-        ctx.fillText('READY', cooldownBarX + cooldownBarWidth + 10, cooldownBarY + cooldownBarHeight / 2 + 4);
-    }
-};
-
-/**
- * Handle player being hit
- */
-AlchemyBlaster.prototype.playerHit = function() {
-    const player = this.player;
-    
     // Set last hit time for invulnerability and shield regen delay
     player.lastHitTime = Date.now();
     
@@ -2914,6 +2504,115 @@ AlchemyBlaster.prototype.useSpecialAbility = function() {
     this.playSound('special');
 };
 
+AlchemyBlaster.prototype.fireSpecialAttack = function() {
+    if (!this.player) return;
+    
+    // Don't fire if cooldown hasn't finished yet
+    const now = Date.now();
+    if (!this.player.canBurstFire) {
+        return false;
+    }
+    
+    // Use different special attacks based on character
+    if (this.selectedCharacter === 'aliza') {
+        // Aliza's special attack: seeking projectiles that pass through enemies
+        
+        // Play special attack sound
+        const spellSound = this.assets.sounds.spellfire[Math.floor(Math.random() * this.assets.sounds.spellfire.length)];
+        if (spellSound) {
+            spellSound.currentTime = 0;
+            spellSound.play().catch(e => console.error("Error playing spell sound:", e));
+        }
+        
+        // Create seeking projectile through the ProjectileManager
+        if (this.projectileManager) {
+            // Player position
+            const playerX = this.player.x + (this.player.width / 2);
+            const playerY = this.player.y;
+            
+            // Create a seeking projectile with passthrough ability and larger hitbox
+            this.projectileManager.createSeekingProjectile(playerX, playerY, {
+                sprite: 'alizashotimpact1',
+                damage: 10,
+                width: 80,  // Double the width from 40 to 80
+                height: 80, // Double the height from 40 to 80
+                passThrough: true, // Explicitly enable passthrough
+                maxTargets: 10,     // Allow hitting up to 10 enemies before disappearing
+                seekSpeed: 4.5     // Slightly slower to make it more visible as it seeks targets
+            });
+            
+            // Add secondary orbital projectiles that circle around the main one
+            for (let i = 0; i < 3; i++) {
+                const angle = (i * 120) * Math.PI / 180; // Evenly space 3 orbitals
+                const offsetX = Math.cos(angle) * 40;
+                const offsetY = Math.sin(angle) * 40;
+                
+                this.projectileManager.createOrbitalProjectile(
+                    playerX + offsetX,
+                    playerY + offsetY,
+                    {
+                        sprite: 'alizaShot2',
+                        damage: 10,
+                        width: 80,
+                        height: 80,
+                        orbitRadius: 40,
+                        orbitSpeed: 0.1,
+                        passThrough: true,
+                        maxTargets: 10, // Allow hitting up to 10 enemies before disappearing
+                        lifespan: 5000 // 4 seconds lifespan
+                    }
+                );
+            }
+            
+            // Create visual effect for special attack launch
+            this.particleSystem.createExplosion(playerX, playerY - 30, 'special');
+            
+            // Set cooldown
+            this.player.canBurstFire = false;
+            this.player.lastBurstFire = now;
+            
+            // Reset cooldown after delay
+            setTimeout(() => {
+                this.player.canBurstFire = true;
+            }, this.player.burstFireCooldown);
+            
+            return true;
+        }
+    } else if (this.selectedCharacter === 'dere') {
+        // Dere's special attack (original)
+        // (code for Dere's special attack would go here)
+    } else if (this.selectedCharacter === 'shinshi') {
+        // Shinshi's special attack (beam-based)
+        // (code for Shinshi's special attack would go here)
+    }
+    
+    return false;
+};
+
+Player.prototype.triggerBurstFire = function() {
+    if (!this.canBurstFire) return false;
+    
+    const now = Date.now();
+    this.isBurstFiring = true;
+    this.lastBurstFire = now;
+    
+    // Trigger the special attack in the game controller
+    if (this.game && this.game.fireSpecialAttack) {
+        this.game.fireSpecialAttack();
+    }
+    
+    // Set cooldown status
+    this.canBurstFire = false;
+    
+    // Reset cooldown after delay
+    setTimeout(() => {
+        this.canBurstFire = true;
+        this.isBurstFiring = false;
+    }, this.burstFireCooldown);
+    
+    return true;
+};
+
 class Enemy {
     constructor(x, y, type, game, pattern) {
         this.x = x;
@@ -2931,27 +2630,56 @@ class Enemy {
         this.shieldActive = false;
         this.shieldCooldown = 0;
         this.position = { x: this.x, y: this.y };
+        
+        // Set isFlyby flag for specific enemy types that should be excluded from wave completion
+        this.isFlyby = (this.type === 'darkling1' || this.type === 'darkling9');
+        
+        // For flyby enemies, set their initial vertical position to be near the top of the screen
+        if (this.isFlyby) {
+            // Position flyby enemies in the top 25% of the screen (between y = 50 and y = canvas.height * 0.25)
+            this.y = Math.min(this.y, 50 + Math.random() * (game.canvas.height * 0.25 - 50));
+        }
     }
 
     update(time) {
         // Check if darkling1 or darkling9 should flee
-        if ((this.type === 'darkling1' && time - this.spawnTime > 15000) ||
-            (this.type === 'darkling9' && time - this.spawnTime > 10000)) {
-            this.fadeAlpha -= 0.05;
+        if ((this.type === 'darkling1' && time - this.spawnTime > 20000) ||
+            (this.type === 'darkling9' && time - this.spawnTime > 15000)) {
+            // Increase fade duration for flyby enemies (slower fade)
+            this.fadeAlpha -= 0.03;
             if (this.fadeAlpha <= 0) {
                 return true; // Remove the enemy
             }
         }
 
-        // Update position based on pattern
-        const pos = this.pattern(time);
+        // Get position update
+        let pos;
+        if (this.isFlyby) {
+            // Custom pattern handling for flyby enemies to keep them near the top
+            // and slow down their movement
+            const elapsed = (time - this.spawnTime) / 1000;
+            
+            // Create horizontal oscillation pattern with vertical constraint
+            const xAmplitude = this.game.canvas.width * 0.4; // 40% of canvas width
+            const period = 10; // seconds for a complete oscillation
+            const horizontalSpeed = 0.5; // Slow horizontal movement
+            const xOffset = Math.sin(elapsed * horizontalSpeed) * xAmplitude;
+            
+            // Keep vertical position constrained to top 25% of screen
+            const maxY = this.game.canvas.height * 0.25;
+            const minY = 50;
+            const verticalPosition = minY + (Math.sin(elapsed * 0.3) + 1) * 0.5 * (maxY - minY);
+            
+            pos = { x: xOffset, y: verticalPosition };
+        } else {
+            // Use original pattern for non-flyby enemies
+            pos = this.pattern(time);
+        }
         
-        // FIXED: Allow enemies to appear in full vertical range
-        // This removes the arbitrary top limit that was preventing enemies from
-        // appearing in the top half of the screen
+        // Allow enemies to appear in full vertical range (except flyby enemies)
         this.x = Math.max(this.width/2, Math.min(this.game.canvas.width - this.width/2,
-                     this.game.canvas.width/2 + pos.x));
-        this.y = pos.y; // No longer limit Y position to bottom 60% of screen
+                    this.game.canvas.width/2 + pos.x));
+        this.y = pos.y; // Position Y using pattern result
         
         // Update position object to match coordinates
         this.position.x = this.x;
@@ -2965,13 +2693,10 @@ class Enemy {
             }
         }
 
-        // Handle shooting - FIXED: enemies properly fire now
-        if (time - this.lastShot >= this.shotCooldown && !this.isInvulnerable) {
-            // Skip shooting only for specific non-shooting enemies
-            if (this.type !== 'darkling1' && this.type !== 'darkling9') {
-                this.shoot();
-                this.lastShot = time;
-            }
+        // Handle shooting - Skip shooting for flyby enemies
+        if (time - this.lastShot >= this.shotCooldown && !this.isInvulnerable && !this.isFlyby) {
+            this.shoot();
+            this.lastShot = time;
         }
         return false;
     }

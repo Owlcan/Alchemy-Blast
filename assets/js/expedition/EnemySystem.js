@@ -75,9 +75,9 @@ class Enemy {
             case 'darkling10':
                 return 4;
             case 'darklingboss1':
-                return 50;
+                return 500;
             case 'darklingboss2':
-                return 150;
+                return 1000;
             case 'darklingboss3':
                 return 4000;
             default:

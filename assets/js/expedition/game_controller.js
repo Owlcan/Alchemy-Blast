@@ -15,13 +15,7 @@ class GameController {
         this.gameState = {
             isActive: false,
             isPaused: false,
-currentRound: 1,
-            currentWave: 1,
-            waveCompleted: false,
-            enemiesRemaining: 0,
-            score: 0,
-            selectedCharacter: null,
-currentRound: 1,
+            currentRound: 1,
             currentWave: 1,
             waveCompleted: false,
             enemiesRemaining: 0,
@@ -35,7 +29,7 @@ currentRound: 1,
         
         this.player = {
             position: { x: 0, y: 0 },
-                        health: 100,
+            health: 100,
             shield: 0,
             maxShield: 0,
             shieldRegenRate: 0,
@@ -124,7 +118,7 @@ currentRound: 1,
             // Original formations
             'line': (enemies, spacing, startPosition) => {
                 const positions = [];
-                const enhancedSpacing = spacing * 1.8; // Increase spacing by 80% (was 50%)
+                const enhancedSpacing = spacing * 1.2; // Increase spacing by 80% (was 50%)
                 
                 for (let i = 0; i < enemies.length; i++) {
                     positions.push({
@@ -141,8 +135,8 @@ currentRound: 1,
             
             'grid': (enemies, rows, cols, spacing, startPosition) => {
                 const positions = [];
-                const enhancedSpacingX = spacing.x * 1.8; // Increased from 1.5
-                const enhancedSpacingY = spacing.y * 1.8; // Increased from 1.5
+                const enhancedSpacingX = spacing.x * 1.2; // Increased from 1.5
+                const enhancedSpacingY = spacing.y * 1.2; // Increased from 1.5
                 
                 for (let row = 0; row < rows; row++) {
                     for (let col = 0; col < cols; col++) {
@@ -292,7 +286,7 @@ currentRound: 1,
                 for (let i = 0; i < totalEnemies; i++) {
                     // Calculate angle and radius for spiral - increased spacing
                     const angle = i * (Math.PI * 2 / 8); // 8 points per full circle
-                    const radius = 45 + (i * 20); // Increased from 30 + (i * 15)
+                    const radius = 20 + (i * 10); // Increased from 30 + (i * 15)
                     
                     positions.push({
                         type: enemies[i],
@@ -973,22 +967,30 @@ currentRound: 1,
                     positions.push({
                         type: formation.boss.type,
                         position: { ...formation.boss.position },
-                isBoss: true
-            });
+                        isBoss: true
+                    });
                 }
                 
-                // Process first phase
+                // Add guardian enemies that flank the boss
+                if (formation.guardians && formation.guardians.length > 0) {
+                    for (const guardian of formation.guardians) {
+                        positions.push({
+                            type: guardian.type,
+                            position: { ...guardian.position }
+                        });
+                    }
+                }
+                
+                // Add phase enemies if present
                 if (formation.phases && formation.phases.length > 0) {
                     const firstPhase = formation.phases[0];
-                    
-                    if (firstPhase.formation === 'shield-wall' && firstPhase.enemies && firstPhase.positions) {
-                        // Create shield wall
-                        for (let i = 0; i < firstPhase.enemies.length; i++) {
+                    if (firstPhase.enemies && firstPhase.positions) {
+                        for (let i = 0; i < Math.min(firstPhase.enemies.length, firstPhase.positions.length); i++) {
                             positions.push({
                                 type: firstPhase.enemies[i],
                                 position: { ...firstPhase.positions[i] },
-                                belongsToPhase: 0,
-                                phaseChangeTime: Date.now() + firstPhase.duration
+                                phaseIndex: 0,
+                                belongsToPhase: true
                             });
                         }
                     }
@@ -1001,7 +1003,7 @@ currentRound: 1,
     
     /**
      * Start a new game with the selected character
-     * @param {string} character - Selected character ('dere' or 'aliza')
+     * @param {string} character - Selected character ('dere', 'aliza', or 'shinshi')
      */
     startGame(character) {
         // Reset game state
@@ -1030,6 +1032,13 @@ currentRound: 1,
         this.projectiles.enemy = [];
         this.powerups = [];
         this.formationOffset = { x: 0, y: 0 };
+        
+        // Store selected character in the audio manager but DON'T play the start sound
+        // The start sound is already played from game_module.js
+        if (window.audioManager) {
+            // Just update the internal state without playing the sound
+            window.audioManager.selectedCharacter = character;
+        }
         
         // Spawn the first wave
         this.spawnWave();
@@ -1107,6 +1116,19 @@ currentRound: 1,
      */
     pauseGame(isPaused) {
         this.gameState.isPaused = isPaused;
+        
+        // Direct music handling for pause state
+        if (isPaused) {
+            // Pause the music when game is paused
+            if (window.bgmPlayer) {
+                window.bgmPlayer.pause();
+            }
+        } else {
+            // Resume music when unpaused
+            if (window.bgmPlayer) {
+                window.bgmPlayer.play().catch(e => console.error("Couldn't resume music:", e));
+            }
+        }
     }
     
     /**
@@ -1150,18 +1172,22 @@ currentRound: 1,
                 this.player.burstMode.lastUsed = Date.now();
                 this.player.burstMode.isReady = false;
                 
-                // Play special attack sound
-                if (this.audioManager) {
-                    this.audioManager.playSfx('derespecialattack');
+                // Use PlayerLogic to create special attack with proper animation and sound
+                if (!this.playerLogic) {
+                    this.playerLogic = new PlayerLogic();
                 }
-
+                
+                // Create special attack and play sound
+                this.playerLogic.createSpecialAttack(character, this.gameState, this.audioManager);
+                
                 // Create flash effect that damages all enemies on screen
                 this.createScreenClearingFlash();
             } else {
-                // Regular attack: Shot count based on power level (up to 5 levels now)
+                // Regular attack: Shot count based on power level
                 const powerConfig = this.monsterLogic.characterMechanics.dere.firing.powerLevels[this.player.powerLevel] || 
                                     this.monsterLogic.characterMechanics.dere.firing.powerLevels[1];
                                     
+                // Create projectiles
                 for (let i = 0; i < powerConfig.projectiles; i++) {
                     // Calculate offset based on number of projectiles
                     let offset = 0;
@@ -1173,6 +1199,9 @@ currentRound: 1,
                         offset = i === 0 ? -30 : (i === 1 ? -10 : (i === 2 ? 10 : 30));
                     }
                     
+                    // Use Dere's specific shot sprite based on power level
+                    const shotSprite = `dereshot${Math.min(this.player.powerLevel, 3)}`;
+                    
                     // Use ProjectileManager instead of directly manipulating the projectiles array
                     if (this.projectileManager) {
                         this.projectileManager.createPlayerProjectile(
@@ -1182,7 +1211,7 @@ currentRound: 1,
                             -20,
                             {
                                 damage: powerConfig.damage,
-                                sprite: Math.min(this.player.powerLevel - 1, 2)
+                                sprite: shotSprite
                             }
                         );
                     } else {
@@ -1193,13 +1222,15 @@ currentRound: 1,
                             vx: 0,
                             vy: -20,
                             damage: powerConfig.damage,
-                            sprite: Math.min(this.player.powerLevel - 1, 2)
+                            sprite: shotSprite
                         });
                     }
                 }
                 
-                // Play shot sound
-                if (this.audioManager) {
+                // Play the shared spellfire sound (cycles between variants)
+                if (window.audioManager) {
+                    window.audioManager.playSpellfireSound();
+                } else if (this.audioManager) {
                     this.audioManager.playSfx('playerShot');
                 }
             }
@@ -1211,90 +1242,159 @@ currentRound: 1,
                 this.player.burstMode.lastUsed = Date.now();
                 this.player.burstMode.isReady = false;
                 
-                // Create homing projectiles using ProjectileManager
-                if (this.projectileManager) {
-                    this.projectileManager.createPlayerProjectile(
-                        this.player.position.x,
-                        this.player.position.y - 20,
-                        0,
-                        -20,
-                        {
-                            damage: 15,
-                            sprite: 2,
-                            isHoming: true,
-                            isSpecialAttack: true
-                        }
-                    );
-                } else {
-                    // Fallback
-                    this.projectiles.player.push({
+                // Create burst of homing projectiles
+                const burstCount = 12; // Number of homing projectiles in burst
+                const angleStep = (Math.PI * 2) / burstCount;
+                
+                for (let i = 0; i < burstCount; i++) {
+                    const angle = i * angleStep;
+                    const speed = 5 + Math.random() * 3; // Random speed between 5-8
+                    
+                    // Calculate initial velocity based on angle
+                    const vx = Math.cos(angle) * speed;
+                    const vy = Math.sin(angle) * speed;
+                    
+                    // Create homing projectile directly to avoid issues
+                    const proj = {
                         x: this.player.position.x,
                         y: this.player.position.y - 20,
-                        vx: 0,
-                        vy: -20,
-                        damage: 15,
-                        sprite: 2,
+                        vx: vx,
+                        vy: vy,
+                        damage: 5,
+                        sprite: 'alizashot3',
+                        isSpecialAttack: true,
                         isHoming: true,
-                        isSpecialAttack: true
-                    });
+                        homingStrength: 0.3,
+                        homingDelay: i * 200, // Stagger homing activation
+                        initialDelay: i * 100, // Stagger initial launch
+                        impactSprite: 'alizashotimpact2',
+                        width: 25,
+                        height: 25
+                    };
+                    
+                    if (!this.projectiles.player) {
+                        this.projectiles.player = [];
+                    }
+                    this.projectiles.player.push(proj);
                 }
                 
                 // Play special attack sound
-                if (this.audioManager) {
+                if (window.audioManager) {
+                    window.audioManager.playSfx('alizaspecialattack');
+                } else if (this.audioManager) {
                     this.audioManager.playSfx('alizaspecialattack');
                 }
             } else {
-                // Regular attack: Fast, weak shots
-                const spreadAmount = this.player.powerLevel * 0.5;
+                // Regular attack based on power level
+                const powerLevel = this.player.powerLevel;
                 
-                for (let i = 0; i < this.player.powerLevel; i++) {
-                    const spreadOffset = this.player.powerLevel === 1 ? 0 : 
-                                       (this.player.powerLevel === 2) ? (i === 0 ? -spreadAmount : spreadAmount) :
-                                       (i === 0 ? -spreadAmount : i === 1 ? 0 : spreadAmount);
-                    
-                    // Use ProjectileManager instead of directly manipulating the projectiles array
-                    if (this.projectileManager) {
-                        this.projectileManager.createPlayerProjectile(
-                            this.player.position.x,
-                            this.player.position.y - 20,
-                            spreadOffset,
-                            -20,
-                            {
-                                damage: 5,
-                                sprite: 0
-                            }
-                        );
-                    } else {
-                        // Fallback
+                // Define shot sprite based on power level
+                const shotSprite = `alizashot${powerLevel}`;
+                const damage = Math.min(powerLevel, 3);
+                const speed = 8 + powerLevel;
+                
+                switch (powerLevel) {
+                    case 1:
+                        // Single shot
+                        if (!this.projectiles.player) {
+                            this.projectiles.player = [];
+                        }
+                        
                         this.projectiles.player.push({
                             x: this.player.position.x,
                             y: this.player.position.y - 20,
-                            vx: spreadOffset,
-                            vy: -20,
-                            damage: 5,
-                            sprite: 0
+                            vx: 0,
+                            vy: -speed,
+                            damage: damage,
+                            sprite: shotSprite
                         });
-                    }
+                        break;
+                        
+                    case 2:
+                        // Double shot
+                        if (!this.projectiles.player) {
+                            this.projectiles.player = [];
+                        }
+                        
+                        this.projectiles.player.push({
+                            x: this.player.position.x - 8,
+                            y: this.player.position.y - 20,
+                            vx: 0,
+                            vy: -speed,
+                            damage: damage,
+                            sprite: shotSprite
+                        });
+                        
+                        this.projectiles.player.push({
+                            x: this.player.position.x + 8,
+                            y: this.player.position.y - 20,
+                            vx: 0,
+                            vy: -speed,
+                            damage: damage,
+                            sprite: shotSprite
+                        });
+                        break;
+                        
+                    case 3:
+                    default:
+                        // Triple shot with angled side shots
+                        if (!this.projectiles.player) {
+                            this.projectiles.player = [];
+                        }
+                        
+                        // Center shot
+                        this.projectiles.player.push({
+                            x: this.player.position.x,
+                            y: this.player.position.y - 20,
+                            vx: 0,
+                            vy: -speed,
+                            damage: damage,
+                            sprite: shotSprite
+                        });
+                        
+                        // Side shots (angled)
+                        this.projectiles.player.push({
+                            x: this.player.position.x - 12,
+                            y: this.player.position.y - 15,
+                            vx: -2,
+                            vy: -speed + 1, // Slightly slower vertical speed
+                            damage: damage - 1,
+                            sprite: shotSprite
+                        });
+                        
+                        this.projectiles.player.push({
+                            x: this.player.position.x + 12,
+                            y: this.player.position.y - 15,
+                            vx: 2,
+                            vy: -speed + 1, // Slightly slower vertical speed
+                            damage: damage - 1,
+                            sprite: shotSprite
+                        });
+                        break;
                 }
                 
-                // Play shot sound
-                if (this.audioManager) {
+                // Play the shared spellfire sound (cycles between variants) - same as Dere
+                if (window.audioManager) {
+                    window.audioManager.playSpellfireSound();
+                } else if (this.audioManager) {
                     this.audioManager.playSfx('playerShot');
                 }
             }
         } else if (character === 'shinshi') {
             // Shinshi: Beam attack
             if (isSpecial && this.player.burstMode.isReady) {
-                // Special attack: Five horizontal beams across screen
+                // Special attack: Five vertical beams across screen
                 this.player.burstMode.active = true;
                 this.player.burstMode.lastUsed = Date.now();
                 this.player.burstMode.isReady = false;
                 
-                // Create horizontal beam special attack
+                // Create vertical beam special attack
                 this.createShinshiSpecialAttack();
                 
                 // Play special attack sound
-                if (this.audioManager) {
+                if (window.audioManager) {
+                    window.audioManager.playSfx('shinnypewpewpew');
+                } else if (this.audioManager) {
                     this.audioManager.playSfx('shinnypewpewpew');
                 }
             } else {
@@ -1302,13 +1402,13 @@ currentRound: 1,
                 
                 // Start beam or continue beam
                 if (!this.player.isBeamActive) {
-                    // Start new beam attack
                     this.player.isBeamActive = true;
-                    this.player.beamChargeStartTime = now;
-                    this.player.beamLevel = 1;
+                    this.player.beamLevel = this.player.powerLevel;
                     
-                    // Play beam attack sound
-                    if (this.audioManager) {
+                    // Play beam start sound
+                    if (window.audioManager) {
+                        window.audioManager.playSfx('shinnyattack1');
+                    } else if (this.audioManager) {
                         this.audioManager.playSfx('shinnyattack1');
                     }
                 }
@@ -1339,11 +1439,23 @@ currentRound: 1,
             x: this.player.position.x,
             y: this.player.position.y - 10,
             width: beamWidth,
-            height: this.player.position.y,
+            height: this.player.position.y + 1000, // Extend beam to ensure it reaches top of screen
             damage: damage,
             level: beamLevel,
             createdAt: Date.now()
         });
+        
+        // Play Shinshi's attack sound, alternating between zap1 and zap2
+        if (this.audioManager && !this.player.lastBeamSound) {
+            const soundToPlay = Math.random() < 0.5 ? 'shinnyzap1' : 'shinnyzap2';
+            this.audioManager.playSfx(soundToPlay);
+            this.player.lastBeamSound = Date.now();
+        } else if (this.audioManager && Date.now() - this.player.lastBeamSound > 1200) {
+            // Only play a new sound after a short delay
+            const soundToPlay = Math.random() < 0.8 ? 'shinnyzap1' : 'shinnyzap2';
+            this.audioManager.playSfx(soundToPlay);
+            this.player.lastBeamSound = Date.now();
+        }
     }
 
     /**
@@ -1355,21 +1467,28 @@ currentRound: 1,
         // Default dimensions if canvas is not available
         const screenWidth = this.canvas ? this.canvas.width : 800;
         const screenHeight = this.canvas ? this.canvas.height : 600;
-        const beamWidth = 60; // Width of each vertical beam
         
-        // Create 5 vertical beams distributed across the screen
+        // Create 5 vertical beams that span the entire screen
         for (let i = 0; i < 5; i++) {
-            const xPosition = (i * screenWidth / 5) + (beamWidth / 2);
+            // Calculate beam position to center across the screen
+            // Divide screen into 5 equal sections, put beam in center of each section
+            const xPos = (i * (screenWidth / 5)) + (screenWidth / 10);
             
             this.projectiles.specialBeams.push({
-                x: 0, 
-                y: 0, // Start at top of screen
-                width: 120,
-                height: screenHeight,
+                x: xPos - (screenWidth / 2), // Convert to game coordinates (centered at 0,0)
+                y: 0,
+                width: 60, // Beam width
+                height: screenHeight * 2, // Ensure beam covers entire screen
                 damage: 15,
-                isVertical: true, // Explicitly mark as vertical beam
-                createdAt: Date.now()
+                isVertical: true, // Mark as vertical beam
+                createdAt: Date.now(),
+                duration: 200 // Set duration to 200ms
             });
+        }
+        
+        // Play special attack sound
+        if (this.audioManager) {
+            this.audioManager.playSfx('shinnypewpewpew');
         }
     }
     
@@ -1404,6 +1523,14 @@ currentRound: 1,
             duration: 500,
             startTime: Date.now()
         });
+        
+        // Add special attack state for the renderer to use
+        this.specialAttack = {
+            type: 'dereSpecial',
+            startTime: Date.now(),
+            duration: 1000,
+            intensity: 0.7 // Flash intensity (0.0 to 1.0)
+        };
     }
     
     /**
@@ -1437,6 +1564,28 @@ currentRound: 1,
         if (!formation) {
             console.error('Invalid formation for current round/wave');
             return;
+        }
+        
+        // Check if this is a boss wave and determine which boss number (1, 2, or 3)
+        const isBossWave = this.monsterLogic.isBossWave(
+            this.gameState.currentRound, 
+            this.gameState.currentWave
+        );
+        
+        console.log(`Spawning wave ${this.gameState.currentWave} for round ${this.gameState.currentRound}, isBoss: ${isBossWave}`);
+        
+        // Use the singleton audio system to play music based on the current round and wave
+        if (window.audioManager) {
+            if (isBossWave) {
+                // Play boss music based on round number
+                window.audioManager.playBossMusic(this.gameState.currentRound);
+            } else {
+                // Play round-specific music
+                window.audioManager.playRoundMusic(this.gameState.currentRound, false);
+            }
+        } else if (window.updateGameMusic) {
+            // Fallback to global function if available
+            window.updateGameMusic(this.gameState.currentRound, isBossWave);
         }
         
         let enemyPositions = [];
@@ -1702,13 +1851,201 @@ currentRound: 1,
                 enemy.converge = { ...enemyPos.converge };
             }
             
+            // Check if this enemy is a flyby type that should be excluded from wave completion count
+            enemy.isFlyby = enemy.type === 'darkling1' || enemy.type === 'darkling9';
+            
             this.enemies.push(enemy);
         }
         
-        this.gameState.enemiesRemaining = this.enemies.length;
+        // Only count non-flyby enemies towards completion
+        this.gameState.enemiesRemaining = this.enemies.filter(enemy => !enemy.isFlyby).length;
         this.gameState.waveCompleted = false;
         this.formationOffset = { x: 0, y: 0 };
         this.lastEnemySpawnTime = Date.now();
+        
+        // FIX: Log the number of enemies spawned for this wave
+        console.log(`Spawned ${this.enemies.length} enemies, ${this.gameState.enemiesRemaining} count toward wave completion`);
+        
+        // FIX: Safety check - if no enemies were spawned that count toward completion, reset and try again
+        if (this.gameState.enemiesRemaining === 0 && this.enemies.length === 0) {
+            console.warn("No enemies spawned for this wave. Trying to fix...");
+            
+            // Create at least one enemy to avoid auto-completion
+            this.enemies.push({
+                type: 'darkling1',
+                position: { x: 0, y: -100 },
+                basePosition: { x: 0, y: -100 },
+                health: 1,
+                lastShotTime: Date.now(),
+                shotCooldown: 3000,
+                speed: 2,
+                points: 10,
+                isInFormation: true,
+                isFlyby: false
+            });
+            
+            this.gameState.enemiesRemaining = 1;
+        }
+    }
+    
+    /**
+     * Get the current game state
+     * @returns {Object} Current game state and player info
+     */
+    getGameState() {
+        // Create a comprehensive state object that includes all necessary data for rendering
+        return {
+            isActive: this.gameState.isActive,
+            isPaused: this.gameState.isPaused,
+            currentRound: this.gameState.currentRound,
+            currentWave: this.gameState.currentWave,
+            waveCompleted: this.gameState.waveCompleted,
+            enemiesRemaining: this.gameState.enemiesRemaining,
+            score: this.gameState.score,
+            selectedCharacter: this.gameState.selectedCharacter,
+            gameOver: this.gameState.gameOver,
+            victory: this.gameState.victory,
+            elapsedTime: this.gameState.elapsedTime,
+            player: this.player,
+            enemies: this.enemies,
+            projectiles: this.projectiles,
+            powerups: this.powerups || [],
+            formationPattern: this.formationMovement ? 'active' : 'none'
+        };
+    }
+    
+    /**
+     * Update the game state
+     * @param {number} timestamp - Current animation frame timestamp
+     */
+    update(timestamp) {
+        // Update game time
+        if (this.gameState.startTime) {
+            this.gameState.elapsedTime = Date.now() - this.gameState.startTime;
+        }
+        
+        // FIX: Only check for wave completion if the wave isn't already completed
+        if (!this.gameState.waveCompleted) {
+            // Check if all non-flyby enemies are defeated for wave completion
+            const nonFlybyEnemiesRemaining = this.enemies.filter(enemy => !enemy.isFlyby).length;
+            
+            // Log the current enemy count for debugging
+            if (this.gameState.debug) {
+                console.log(`Remaining enemies: ${nonFlybyEnemiesRemaining} (wave ${this.gameState.currentWave}, round ${this.gameState.currentRound})`);
+            }
+            
+            if (nonFlybyEnemiesRemaining === 0 && this.enemies.length > 0) {
+                // Make sure we have enemies but they're all flyby enemies
+                this.gameState.waveCompleted = true;
+                this.handleWaveCompleted();
+            } else if (nonFlybyEnemiesRemaining === 0 && this.lastEnemySpawnTime && 
+                      (Date.now() - this.lastEnemySpawnTime > 2000)) {
+                // If there are no enemies and it's been 2 seconds since the wave was spawned,
+                // consider it completed (safety fallback)
+                this.gameState.waveCompleted = true;
+                this.handleWaveCompleted();
+            }
+        }
+        
+        // Update powerup cooldowns
+        if (this.player.burstMode && !this.player.burstMode.isReady) {
+            if (Date.now() - this.player.burstMode.lastUsed > this.player.burstMode.cooldown) {
+                this.player.burstMode.isReady = true;
+            }
+        }
+        
+        // Regenerate shield if applicable (for Aliza)
+        if (this.player.shieldRegenRate > 0 && this.player.shield < this.player.maxShield) {
+            this.player.shield = Math.min(
+                this.player.maxShield,
+                this.player.shield + this.player.shieldRegenRate
+            );
+        }
+        
+        // Check if we should spawn flyby enemies
+        if (this.monsterLogic && this.monsterLogic.shouldSpawnFlyby(timestamp)) {
+            const flybyEnemies = this.monsterLogic.createFlybyGroup(timestamp);
+            if (flybyEnemies && flybyEnemies.length > 0) {
+                // Add the flyby enemies to the main enemies array but don't count them toward wave completion
+                this.enemies.push(...flybyEnemies);
+                // Note: No longer updating enemiesRemaining here
+            }
+        }
+        
+        // Update flyby enemies
+        this.updateFlybyEnemies(timestamp);
+        
+        // Update formation movement
+        this.updateFormationMovement(timestamp);
+        
+        // Update enemies
+        this.updateEnemies(timestamp);
+        
+        // Update projectiles
+        this.updateProjectiles(timestamp);
+        
+        // Update powerups
+        this.updatePowerups();
+        
+        // Check collisions
+        this.checkCollisions();
+    }
+    
+    /**
+     * Handle completion of a wave
+     */
+    handleWaveCompleted() {
+        // Prevent multiple calls to handleWaveCompleted
+        if (this._handlingWaveCompletion) return;
+        this._handlingWaveCompletion = true;
+        
+        console.log(`Wave ${this.gameState.currentWave} of Round ${this.gameState.currentRound} completed!`);
+        
+        // Apply wave completion bonus
+        const waveBonus = 100 * this.gameState.currentWave * this.gameState.currentRound;
+        this.gameState.score += waveBonus;
+        
+        // Schedule next wave or round
+        setTimeout(() => {
+            this._handlingWaveCompletion = false;
+            const wavesInRound = this.monsterLogic.getWavesInRound(this.gameState.currentRound);
+            
+            if (this.gameState.currentWave < wavesInRound) {
+                // Start next wave
+                this.gameState.currentWave++;
+                this.gameState.waveCompleted = false;
+                console.log(`Starting wave ${this.gameState.currentWave} of round ${this.gameState.currentRound}`);
+                this.spawnWave();
+            } else if (this.gameState.currentRound < 3) {
+                // Start next round
+                this.gameState.currentRound++;
+                this.gameState.currentWave = 1;
+                this.gameState.waveCompleted = false;
+                console.log(`Starting round ${this.gameState.currentRound}, wave ${this.gameState.currentWave}`);
+                this.spawnWave();
+            } else {
+                // All rounds completed - victory!
+                this.handleGameOver(true);
+            }
+        }, 3000); // 3 second delay between waves
+    }
+    
+    /**
+     * Update formation movement pattern
+     * @param {number} timestamp - Current animation frame timestamp
+     */
+    updateFormationMovement(timestamp) {
+        if (!this.formationMovement) {
+            return;
+        }
+        
+        // Apply the formation movement pattern function
+        const movement = this.formationMovement(timestamp, this.formationOffset);
+        
+        if (movement) {
+            this.formationOffset.x = movement.x;
+            this.formationOffset.y = movement.y;
+        }
     }
     
     /**
@@ -1940,113 +2277,10 @@ currentRound: 1,
     }
     
     /**
-     * Get the current game state
-     * @returns {Object} Current game state and player info
-     */
-    getGameState() {
-        // Create a comprehensive state object that includes all necessary data for rendering
-        return {
-            isActive: this.gameState.isActive,
-            isPaused: this.gameState.isPaused,
-            currentRound: this.gameState.currentRound,
-            currentWave: this.gameState.currentWave,
-            waveCompleted: this.gameState.waveCompleted,
-            enemiesRemaining: this.gameState.enemiesRemaining,
-            score: this.gameState.score,
-            selectedCharacter: this.gameState.selectedCharacter,
-            gameOver: this.gameState.gameOver,
-            victory: this.gameState.victory,
-            elapsedTime: this.gameState.elapsedTime,
-            player: this.player,
-            enemies: this.enemies,
-            projectiles: this.projectiles,
-            powerups: this.powerups || [],
-            formationPattern: this.formationMovement ? 'active' : 'none'
-        };
-    }
-    
-    /**
-     * Update the game state
-     * @param {number} timestamp - Current animation frame timestamp
-     */
-    update(timestamp) {
-        // Update game time
-        if (this.gameState.startTime) {
-            this.gameState.elapsedTime = Date.now() - this.gameState.startTime;
-        }
-        
-        // Check if all enemies are defeated
-        if (this.enemies.length === 0 && !this.gameState.waveCompleted) {
-            this.gameState.waveCompleted = true;
-            this.handleWaveCompleted();
-        }
-        
-        // Update powerup cooldowns
-        if (this.player.burstMode && !this.player.burstMode.isReady) {
-            if (Date.now() - this.player.burstMode.lastUsed > this.player.burstMode.cooldown) {
-                this.player.burstMode.isReady = true;
-            }
-        }
-        
-        // Regenerate shield if applicable (for Aliza)
-        if (this.player.shieldRegenRate > 0 && this.player.shield < this.player.maxShield) {
-            this.player.shield = Math.min(
-                this.player.maxShield,
-                this.player.shield + this.player.shieldRegenRate
-            );
-        }
-        
-        // Check if we should spawn flyby enemies
-        if (this.monsterLogic && this.monsterLogic.shouldSpawnFlyby(timestamp)) {
-            const flybyEnemies = this.monsterLogic.createFlybyGroup(timestamp);
-            if (flybyEnemies && flybyEnemies.length > 0) {
-                // Add the flyby enemies to the main enemies array
-                this.enemies.push(...flybyEnemies);
-                this.gameState.enemiesRemaining += flybyEnemies.length;
-            }
-        }
-        
-        // Update flyby enemies
-        this.updateFlybyEnemies(timestamp);
-        
-        // Update formation movement
-        this.updateFormationMovement(timestamp);
-        
-        // Update enemies
-        this.updateEnemies(timestamp);
-        
-        // Update projectiles
-        this.updateProjectiles();
-        
-        // Update powerups
-        this.updatePowerups();
-        
-        // Check collisions
-        this.checkCollisions();
-        }
-    
-    /**
-     * Update formation movement pattern
-     * @param {number} timestamp - Current animation frame timestamp
-     */
-    updateFormationMovement(timestamp) {
-        if (!this.formationMovement) {
-            return;
-        }
-        
-        // Apply the formation movement pattern function
-        const movement = this.formationMovement(timestamp, this.formationOffset);
-        
-        if (movement) {
-            this.formationOffset.x = movement.x;
-            this.formationOffset.y = movement.y;
-        }
-    }
-    
-    /**
      * Update all projectiles
+     * @param {number} timestamp - Current timestamp for animation
      */
-    updateProjectiles() {
+    updateProjectiles(timestamp) {
         // Update player projectiles
         for (let i = this.projectiles.player.length - 1; i >= 0; i--) {
             const projectile = this.projectiles.player[i];
@@ -2055,38 +2289,51 @@ currentRound: 1,
             projectile.x += projectile.vx || 0;
             projectile.y += projectile.vy || 0;
             
-            // Handle homing projectiles
+            // Handle homing projectiles for Aliza
             if (projectile.isHoming && this.enemies.length > 0) {
-                // Find closest enemy
-                let closestEnemy = null;
-                let closestDistance = Number.MAX_VALUE;
+                const now = Date.now();
                 
-                for (const enemy of this.enemies) {
-                    const dx = enemy.position.x - projectile.x;
-                    const dy = enemy.position.y - projectile.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                // Check if homing delay has elapsed
+                if (!projectile.homingDelay || now - (projectile.createdAt || now) > projectile.homingDelay) {
+                    // Find closest enemy
+                    let closestEnemy = null;
+                    let closestDistance = Infinity;
                     
-                    if (distance < closestDistance) {
-                        closestDistance = distance;
-                        closestEnemy = enemy;
+                    for (const enemy of this.enemies) {
+                        const dx = enemy.position.x - projectile.x;
+                        const dy = enemy.position.y - projectile.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestEnemy = enemy;
+                        }
                     }
-                }
-                
-                // Adjust velocity to home in on target
-                if (closestEnemy) {
-                    const dx = closestEnemy.position.x - projectile.x;
-                    const dy = closestEnemy.position.y - projectile.y;
-                    const angle = Math.atan2(dy, dx);
                     
-                    // Gradually adjust velocity (homing effect)
-                    projectile.vx += Math.cos(angle) * 0.5;
-                    projectile.vy += Math.sin(angle) * 0.5;
-                    
-                    // Limit maximum speed
-                    const speed = Math.sqrt(projectile.vx * projectile.vx + projectile.vy * projectile.vy);
-                    if (speed > 15) { // Max speed
-                        projectile.vx = (projectile.vx / speed) * 15;
-                        projectile.vy = (projectile.vy / speed) * 15;
+                    // Adjust velocity to home in on target
+                    if (closestEnemy) {
+                        const dx = closestEnemy.position.x - projectile.x;
+                        const dy = closestEnemy.position.y - projectile.y;
+                        const angle = Math.atan2(dy, dx);
+                        
+                        // Use homingStrength to determine how aggressively projectile turns
+                        const homingStrength = projectile.homingStrength || 0.1;
+                        
+                        // Gradually adjust velocity (homing effect)
+                        projectile.vx += Math.cos(angle) * homingStrength;
+                        projectile.vy += Math.sin(angle) * homingStrength;
+                        
+                        // Normalize velocity to maintain consistent speed
+                        const currentSpeed = Math.sqrt(projectile.vx * projectile.vx + projectile.vy * projectile.vy);
+                        const targetSpeed = projectile.isSpecialAttack ? 12 : 8; // Faster for special attacks
+                        
+                        projectile.vx = (projectile.vx / currentSpeed) * targetSpeed;
+                        projectile.vy = (projectile.vy / currentSpeed) * targetSpeed;
+                        
+                        // Store timestamp when projectile was first created
+                        if (!projectile.createdAt) {
+                            projectile.createdAt = now;
+                        }
                     }
                 }
             }
@@ -2126,6 +2373,32 @@ currentRound: 1,
                 projectile.x < -1000 || projectile.x > 1000) {
                 this.projectiles.enemy.splice(i, 1);
             }
+        }
+        
+        // Update special beams (for Shinshi's special attack)
+        if (this.projectiles.specialBeams && this.projectiles.specialBeams.length > 0) {
+            const now = Date.now();
+            this.projectiles.specialBeams = this.projectiles.specialBeams.filter(beam => {
+                // Keep only beams that haven't exceeded their duration
+                return now - beam.createdAt < beam.duration;
+            });
+        }
+        
+        // Update character-specific projectile behaviors
+        if (this.gameState.selectedCharacter === 'aliza' && 
+            this.projectiles.player && 
+            this.projectiles.player.length > 0) {
+            
+            // Use Aliza's logic to update her projectiles (especially homing ones)
+            if (!this.playerAlizaLogic) {
+                this.playerAlizaLogic = new PlayerAlizaLogic();
+            }
+            
+            this.playerAlizaLogic.updateProjectiles(
+                this.projectiles.player,
+                this.enemies,
+                16 // Default delta time for 60fps
+            );
         }
     }
     
@@ -2285,18 +2558,22 @@ currentRound: 1,
     
     /**
      * Handle player being hit
-     * @     * @param {number} damage - Damage amount
+     * @param {number} damage - Damage amount
      * @returns {boolean} - True if damage was applied, false if blocked by invulnerability
      */
     handlePlayerHit(damage) {
         // Don't take damage if recently hit (invulnerability frames)
-        // Reduced from 1000ms to 600ms (40% reduction)
         if (Date.now() - this.player.lastDamageTime < 600) {
             return false;
         }
         
         // Record hit time for invulnerability frames
         this.player.lastDamageTime = Date.now();
+        
+        // Play character-specific hit sound
+        if (window.audioManager) {
+            window.audioManager.playCharacterSound('hit');
+        }
         
         // Handle damage differently based on character
         if (this.gameState.selectedCharacter === 'dere') {
@@ -2311,17 +2588,12 @@ currentRound: 1,
                 if (this.game && this.game.particleSystem) {
                     this.game.particleSystem.createShieldEffect(
                         this.player.position.x, 
-                        thisplayer.position.y
+                        this.player.position.y
                     );
                 }
             } else {
                 // No shield, direct health damage for Dere
                 this.player.health -= damage;
-                // Play hit sound if available
-                if (this.audioManager) {
-                    const hitSoundNumber = Math.floor(Math.random() * 3) + 1;
-                    this.audioManager.playSfx(`derehit${hitSoundNumber}`);
-                }
                 // Check for game over
                 if (this.player.health <= 0) {
                     this.handleGameOver(false);
@@ -2333,10 +2605,12 @@ currentRound: 1,
                 // Take 25% of max shield per hit instead of fixed amount
                 const shieldDamage = this.player.maxShield * 0.25;
                 this.player.shield = Math.max(0, this.player.shield - shieldDamage);
+                
                 // Play shield hit sound if available
                 if (this.audioManager) {
                     this.audioManager.playSfx('shieldHit');
                 }
+                
                 // Create shield hit particle effect
                 if (this.game && this.game.particleSystem) {
                     this.game.particleSystem.createShieldEffect(
@@ -2347,23 +2621,16 @@ currentRound: 1,
             } else {
                 // Shield depleted, take health damage
                 this.player.health--;
-                // Play hit sound if available
-                if (this.audioManager) {
-                    const hitSoundNumber = Math.floor(Math.random() * 3) + 1;
-                    this.audioManager.playSfx(`alizahit${hitSoundNumber}`);
-                }
+                
                 // Check for game over
                 if (this.player.health <= 0) {
                     this.handleGameOver(false);
                 }
             }
         } else if (this.gameState.selectedCharacter === 'shinshi') {
-            // Shinshi: Direct health damage
+            // Shinshi: Direct health damage (no shield)
             this.player.health -= damage;
-            // Play hit sound if available
-            if (this.audioManager) {
-                this.audioManager.playSfx('shinnyhit1');
-            }
+            
             // Check for game over
             if (this.player.health <= 0) {
                 this.handleGameOver(false);
@@ -2413,36 +2680,6 @@ currentRound: 1,
     }
     
     /**
-     * Handle completion of a wave
-     */
-    handleWaveCompleted() {
-        // Apply wave completion bonus
-        const waveBonus = 100 * this.gameState.currentWave * this.gameState.currentRound;
-        this.gameState.score += waveBonus;
-        
-        // Schedule next wave or round
-        setTimeout(() => {
-            const wavesInRound = this.monsterLogic.getWavesInRound(this.gameState.currentRound);
-            
-            if (this.gameState.currentWave < wavesInRound) {
-                // Start next wave
-                this.gameState.currentWave++;
-                this.gameState.waveCompleted = false;
-                this.spawnWave();
-            } else if (this.gameState.currentRound < 3) {
-                // Start next round
-                this.gameState.currentRound++;
-                this.gameState.currentWave = 1;
-                this.gameState.waveCompleted = false;
-                this.spawnWave();
-            } else {
-                // All rounds completed - victory!
-                this.handleGameOver(true);
-            }
-        }, 3000); // 3 second delay between waves
-    }
-    
-    /**
      * Handle game over or victory
      * @param {boolean} victory - Whether the player won
      */
@@ -2450,6 +2687,23 @@ currentRound: 1,
         this.gameState.isActive = false;
         this.gameState.gameOver = true;
         this.gameState.victory = victory;
+        
+        // Play appropriate sound using window.audioManager for character-specific sounds
+        if (window.audioManager) {
+            if (victory) {
+                window.audioManager.playCharacterSound('victory');
+            } else {
+                window.audioManager.playCharacterSound('gameover');
+            }
+        } 
+        // Fallback to old audio manager if window.audioManager is not available
+        else if (this.audioManager) {
+            if (victory) {
+                this.audioManager.playSfx('victory');
+            } else {
+                this.audioManager.playSfx('gameOver');
+            }
+        }
     }
     
     /**
@@ -2464,7 +2718,7 @@ currentRound: 1,
             // Calculate time since last frame (approximate)
             const deltaTime = 16; // Assuming ~60fps
             
-                       // Use the monster logic to update flyby enemies
+            // Use the monster logic to update flyby enemies
             const remainingEnemies = this.monsterLogic.updateFlybyEnemies(flybyEnemies, deltaTime);
             
             // If any enemies were removed (went off screen), update the main enemies array

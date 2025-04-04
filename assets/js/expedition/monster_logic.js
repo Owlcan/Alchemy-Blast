@@ -201,9 +201,10 @@ class MonsterLogic {
                     {
                         // Wave 1: Spiral formation of basic enemies - Increased from 8 to 16
                         formation: 'spiral',
-                        enemies: Array(16).fill('darkling1'),
-                        spacing: { x: 35, y: 35 }, // Reduced spacing to accommodate more enemies
-                        startPosition: { x: 0, y: -200 }, // Maintain original position
+                        enemies: Array(20).fill().map((_, i) => 
+                            i % 3 === 0 ? 'darkling2' : 'darkling1'),
+                        spacing: { x: 25, y: 25 }, // Reduced spacing to accommodate more enemies
+                        startPosition: { x: 0, y: -300 }, // Maintain original position
                         movementPattern: 'rotate'
                     },
                     {
@@ -226,23 +227,13 @@ class MonsterLogic {
                         movementPattern: 'converge'
                     },
                     {
-                        // Wave 4: Flying-V with flanking enemies - Doubled the enemies
-                        formation: 'multi-formation',
-                        subFormations: [
-                            {
-                                type: 'arc',
-                                enemies: Array(10).fill('darkling1'), // Increased from 5
-                                spacing: { radius: 200, arc: 180 },
-                                position: { x: 0, y: -250 } // Moved up by 290 from original 40
-                            },
-                            {
-                                type: 'arc',
-                                enemies: Array(10).fill('darkling1'), // Increased from 5
-                                spacing: { radius: 200, arc: 180 },
-                                position: { x: 0, y: -170 } // Moved up by 290 from original 120
-                            }
-                        ],
-                        movementPattern: 'swoop'
+                        // Wave 4: Pulse Spiral
+                        formation: 'spiral',
+                        enemies: Array(30).fill().map((_, i) => 
+                            i % 3 === 0 ? 'darkling2' : 'darkling3'),
+                        spacing: { x: 1, y: 1 }, // Reduced spacing to accommodate more enemies
+                        startPosition: { x: 0, y: -300 }, // Maintain original position
+                        movementPattern: 'rotate'
                     },
                     {
                         // Wave 5: Boss wave with circling minions - Increased minion counts
@@ -563,7 +554,7 @@ class MonsterLogic {
                     {
                         // Wave 8: Final boss with new tougher vanguard enemies - replaced previous minions
                         formation: 'final-bastion',
-                        boss: { type: 'darklingboss3', position: { x: 0, y: -220 } }, // Centered boss
+                        boss: { type: 'darklingboss3', position: { x: 0, y: -420 } }, // Centered boss
                         phases: [
                             {
                                 // Phase 1: Shielding formation with mini-boss entourage (darkling11 - using boss1's attack pattern)
@@ -584,19 +575,19 @@ class MonsterLogic {
                                         enemies: Array(3).fill('darkling12'), // Using darkling12 instead of darkling7
                                         formation: 'triangle',
                                         radius: 90,
-                                        center: { x: -120, y: 100 }
+                                        center: { x: -120, y: -200 }
                                     },
                                     {
                                         enemies: Array(3).fill('darkling12'), // Using darkling12 instead of darkling7
                                         formation: 'triangle',
                                         radius: 90,
-                                        center: { x: 120, y: 100 }
+                                        center: { x: 120, y: -300 }
                                     },
                                     {
                                         enemies: Array(4).fill('darkling13'), // Using darkling13 instead of darkling8
                                         formation: 'diamond',
                                         radius: 100,
-                                        center: { x: 0, y: 60 }
+                                        center: { x: 0, y: -150 }
                                     }
                                 ],
                                 duration: 15000
@@ -613,10 +604,10 @@ class MonsterLogic {
                         ],
                         // Add flanking guardians directly with the boss
                         guardians: [
-                            { type: 'darkling11', position: { x: -150, y: -180 } },
-                            { type: 'darkling11', position: { x: 150, y: -180 } },
-                            { type: 'darkling12', position: { x: -100, y: -150 } },
-                            { type: 'darkling12', position: { x: 100, y: -150 } }
+                            { type: 'darkling11', position: { x: -150, y: -280 } },
+                            { type: 'darkling11', position: { x: 150, y: -280 } },
+                            { type: 'darkling12', position: { x: -100, y: -250 } },
+                            { type: 'darkling12', position: { x: 100, y: -250 } }
                         ],
                         movementPattern: 'final-stand'
                     }
@@ -696,19 +687,19 @@ class MonsterLogic {
      */
     getInitialHealth(type) {
         const healthMap = {
-            'darklingboss1': 50,
-            'darklingboss2': 250,
+            'darklingboss1': 500,
+            'darklingboss2': 1000,
             'darklingboss3': type === 'darklingboss3' ? 4000 : 400,
             'darkling4': 3,
             'darkling5': 2,
             'darkling6': 2,
-            'darkling7': 10,
+            'darkling7': 7,
             'darkling8': 3,
             'darkling9': 1,
-            'darkling10': 4,
+            'darkling10': 10,
             'darkling11': 15, // Mini boss 1 - tougher than regular enemies
             'darkling12': 20, // Mini boss 2 - even tougher
-            'darkling13': 8   // Elite enemy - tougher than regular but not as tough as mini bosses
+            'darkling13': 10   // Elite enemy - tougher than regular but not as tough as mini bosses
         };
         return healthMap[type] || 1; // Default to 1 if type not found
     }

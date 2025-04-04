@@ -227,7 +227,7 @@ class ParticleSystem {
         
         // Create the main flash
         const flash = this.createParticle(width/2, height/2, 'screenFlash', {
-            color: 'rgba(255, 255, 200, 0.8)',
+            color: 'rgba(81, 191, 255, 0.8)',
             size: Math.max(width, height) / 40, // Scale to cover screen
             lifespan: 15
         });
@@ -244,7 +244,7 @@ class ParticleSystem {
             
             gradient.addColorStop(0, `rgba(255, 255, 220, ${alpha})`);
             gradient.addColorStop(0.3, `rgba(255, 200, 100, ${alpha * 0.7})`);
-            gradient.addColorStop(1, `rgba(255, 150, 50, 0)`);
+            gradient.addColorStop(1, `rgba(18, 56, 128, 0)`);
 
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
@@ -256,7 +256,7 @@ class ParticleSystem {
             ctx.fill();
             
             // Add glow effect
-            ctx.shadowColor = 'rgba(255, 240, 200, 0.8)';
+            ctx.shadowColor = 'rgba(81, 191, 255, 0.8)';
             ctx.shadowBlur = 30;
             ctx.beginPath();
             ctx.arc(width/2, height/2, 80, 0, Math.PI * 2);
@@ -273,7 +273,7 @@ class ParticleSystem {
             const y = height/2 + Math.sin(angle) * distance;
             
             const particle = this.createParticle(x, y, 'flashRay', {
-                color: 'rgba(255, 240, 200, 0.7)',
+                color: 'rgba(20, 169, 255, 0.8)',
                 size: 0.8 + Math.random() * 1.2,
                 angle: angle,
                 speed: 5 + Math.random() * 10,
@@ -326,7 +326,7 @@ class Particle {
             case 'powerup': return '#00ffff';
             case 'shield': return '#40a0ff';
             case 'shieldRing': return '#80c0ff';
-            case 'screenFlash': return '#ffffcc';
+            case 'screenFlash': return '#3A6BFF';
             case 'flashRay': return '#ffffc0';
             default: return '#ffffff';
         }
