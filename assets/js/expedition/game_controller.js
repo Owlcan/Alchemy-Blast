@@ -1852,9 +1852,53 @@ class GameController {
             }
             
             // Check if this enemy is a flyby type that should be excluded from wave completion count
-            enemy.isFlyby = enemy.type === 'darkling1' || enemy.type === 'darkling9';
+            // Only darkling1 and darkling9 should be flyby enemies, not mid-bosses
+            enemy.isFlyby = (enemy.type === 'darkling1' || enemy.type === 'darkling9') && 
+                            !enemy.type.startsWith('darkmidboss') && 
+                            !enemy.type.includes('boss');
+            
+            // Extra safety check: NEVER allow mid-bosses to be flyby enemies
+            if (enemy.type.startsWith('darkmidboss') || enemy.isMidBoss === true) {
+                enemy.isFlyby = false;
+            }
             
             this.enemies.push(enemy);
+        }
+        
+        // Add mid-bosses if present in the formation
+        if (formation.midBoss) {
+            console.log('Adding mid-boss:', formation.midBoss.type);
+            this.enemies.push({
+                type: formation.midBoss.type,
+                position: { ...formation.midBoss.position },
+                basePosition: { ...formation.midBoss.position },
+                health: this.monsterLogic.getInitialHealth(formation.midBoss.type),
+                lastShotTime: Date.now(),
+                shotCooldown: this.monsterLogic.getShotCooldown(formation.midBoss.type),
+                speed: this.monsterLogic.getSpeed(formation.midBoss.type),
+                points: this.monsterLogic.getPoints(formation.midBoss.type),
+                isInFormation: false,
+                isMidBoss: true
+            });
+        }
+        
+        // Add multiple mid-bosses if present
+        if (formation.midBosses && Array.isArray(formation.midBosses)) {
+            console.log(`Adding ${formation.midBosses.length} mid-bosses`);
+            for (const midBoss of formation.midBosses) {
+                this.enemies.push({
+                    type: midBoss.type,
+                    position: { ...midBoss.position },
+                    basePosition: { ...midBoss.position },
+                    health: this.monsterLogic.getInitialHealth(midBoss.type),
+                    lastShotTime: Date.now(),
+                    shotCooldown: this.monsterLogic.getShotCooldown(midBoss.type),
+                    speed: this.monsterLogic.getSpeed(midBoss.type),
+                    points: this.monsterLogic.getPoints(midBoss.type),
+                    isInFormation: false,
+                    isMidBoss: true
+                });
+            }
         }
         
         // Only count non-flyby enemies towards completion
@@ -2056,6 +2100,10 @@ class GameController {
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             
+            // HARD CONSTRAINT: Force mid-bosses to stay on screen
+            // Store original position before any movement
+            const originalPosition = { ...enemy.position };
+            
             // Update enemy position based on formation and individual movement
             if (enemy.isInFormation) {
                 // Apply formation movement
@@ -2206,6 +2254,36 @@ class GameController {
                 
                 enemy.position.x = enemyMovement.x;
                 enemy.position.y = enemyMovement.y;
+            }
+            
+            // HARD CONSTRAINT: Force mid-bosses to stay on screen
+            // After all movement calculations, enforce boundary constraints for mid-bosses
+            if (enemy.isMidBoss || enemy.type.startsWith('darkmidboss')) {
+                // Get canvas bounds
+                const canvasWidth = this.canvas ? this.canvas.width : 800;
+                const canvasHeight = this.canvas ? this.canvas.height : 600;
+                
+                // Define strict boundaries (allow 50px of enemy to go off-screen at most)
+                const margin = 50;
+                const leftBound = -canvasWidth/2 + margin;
+                const rightBound = canvasWidth/2 - margin;
+                const topBound = -canvasHeight/2 + margin;
+                const bottomBound = canvasHeight/2 - margin;
+                
+                // Force position to stay within bounds
+                if (enemy.position.x < leftBound) enemy.position.x = leftBound;
+                if (enemy.position.x > rightBound) enemy.position.x = rightBound;
+                if (enemy.position.y < topBound) enemy.position.y = topBound;
+                if (enemy.position.y > bottomBound) enemy.position.y = bottomBound;
+                
+                // If position was constrained, also update basePosition to prevent elastic snapping
+                if (enemy.position.x !== originalPosition.x || enemy.position.y !== originalPosition.y) {
+                    enemy.basePosition.x += (enemy.position.x - originalPosition.x);
+                    enemy.basePosition.y += (enemy.position.y - originalPosition.y);
+                    
+                    // Debug log
+                    console.log(`CONSTRAINING MID-BOSS: Forced ${enemy.type} to stay on screen at (${enemy.position.x.toFixed(0)}, ${enemy.position.y.toFixed(0)})`);
+                }
             }
             
             // Handle enemy shooting

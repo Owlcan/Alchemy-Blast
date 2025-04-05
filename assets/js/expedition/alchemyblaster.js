@@ -143,6 +143,18 @@ class AlchemyBlaster {
             'darklingboss3': './assets/images/darklings/darklingboss3.png',
             'deregameover': './assets/images/darklings/deregameover.png',
             'alizagameover': './assets/images/darklings/alizagameover.png',
+            // Mid-boss sprites
+            'darkmidboss1': './assets/images/darklings/darkmidboss1.png', 
+            'darkmidboss2': './assets/images/darklings/darkmidboss2.png',
+            'darkmidboss3': './assets/images/darklings/darkmidboss3.png',
+            'darkmidboss4': './assets/images/darklings/darkmidboss4.png',
+            'darkmidboss5': './assets/images/darklings/darkmidboss5.png',
+            'darkmidboss6': './assets/images/darklings/darkmidboss6.png',
+            'darkmidboss7': './assets/images/darklings/darkmidboss7.png',
+            'darkmidboss8': './assets/images/darklings/darkmidboss8.png',
+            'darkmidboss9': './assets/images/darklings/darkmidboss9.png',
+            'darkmidboss10': './assets/images/darklings/darkmidboss10.png',
+            'darkmidboss11': './assets/images/darklings/darkmidboss11.png',
         };
 
         // Print out all image paths to confirm they exist
@@ -2632,7 +2644,10 @@ class Enemy {
         this.position = { x: this.x, y: this.y };
         
         // Set isFlyby flag for specific enemy types that should be excluded from wave completion
-        this.isFlyby = (this.type === 'darkling1' || this.type === 'darkling9');
+        // Ensuring mid-bosses are NEVER flyby enemies
+        this.isFlyby = (this.type === 'darkling1' || this.type === 'darkling9') && 
+                      !this.type.startsWith('darkmidboss') && 
+                      !this.type.includes('boss');
         
         // For flyby enemies, set their initial vertical position to be near the top of the screen
         if (this.isFlyby) {

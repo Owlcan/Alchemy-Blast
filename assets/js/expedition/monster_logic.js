@@ -199,41 +199,45 @@ class MonsterLogic {
             1: { // Round 1
                 waves: [
                     {
-                        // Wave 1: Spiral formation of basic enemies - Increased from 8 to 16
+                        // Wave 1: Spiral formation of basic enemies - with mid-boss 1
                         formation: 'spiral',
                         enemies: Array(20).fill().map((_, i) => 
                             i % 3 === 0 ? 'darkling2' : 'darkling1'),
                         spacing: { x: 25, y: 25 }, // Reduced spacing to accommodate more enemies
                         startPosition: { x: 0, y: -300 }, // Maintain original position
-                        movementPattern: 'rotate'
+                        movementPattern: 'rotate',
+                        midBoss: { type: 'darkmidboss1', position: { x: 0, y: -100 } }
                     },
                     {
-                        // Wave 2: Dual helix formation - Increased from 12 to 20
+                        // Wave 2: Dual helix formation - with mid-boss 2
                         formation: 'helix',
                         enemies: Array(20).fill().map((_, i) => 
                             i % 3 === 0 ? 'darkling2' : 'darkling1'),
                         spacing: { x: 25, y: 18 }, // Reduced spacing
                         startPosition: { x: 0, y: -150 }, // Original position
-                        movementPattern: 'pulse'
+                        movementPattern: 'pulse',
+                        midBoss: { type: 'darkmidboss2', position: { x: 0, y: -120 } }
                     },
                     {
-                        // Wave 3: Circular orbiting formation - Increased from 12 to 24
+                        // Wave 3: Circular orbiting formation - with mid-boss 3
                         formation: 'orbital',
                         rings: 3, // Added an extra ring
                         enemies: Array(24).fill().map((_, i) => 
                             i < 8 ? 'darkling3' : 'darkling2'),
                         spacing: { radius: [80, 140, 200] }, // Added a third ring
                         startPosition: { x: 0, y: -300 }, // Moved up by 400 from original 100
-                        movementPattern: 'converge'
+                        movementPattern: 'converge',
+                        midBoss: { type: 'darkmidboss3', position: { x: 0, y: -150 } }
                     },
                     {
-                        // Wave 4: Pulse Spiral
+                        // Wave 4: Pulse Spiral - with mid-boss 4
                         formation: 'spiral',
                         enemies: Array(30).fill().map((_, i) => 
                             i % 3 === 0 ? 'darkling2' : 'darkling3'),
                         spacing: { x: 1, y: 1 }, // Reduced spacing to accommodate more enemies
                         startPosition: { x: 0, y: -300 }, // Maintain original position
-                        movementPattern: 'rotate'
+                        movementPattern: 'rotate',
+                        midBoss: { type: 'darkmidboss4', position: { x: 0, y: -100 } }
                     },
                     {
                         // Wave 5: Boss wave with circling minions - Increased minion counts
@@ -252,25 +256,27 @@ class MonsterLogic {
             2: { // Round 2
                 waves: [
                     {
-                        // Wave 1: Pentagram formation with rotating enemies - Increased from 15 to 25
+                        // Wave 1: Pentagram formation with rotating enemies - with mid-boss 5
                         formation: 'pentagram',
                         enemies: Array(25).fill().map((_, i) => 
                             ['darkling1', 'darkling2', 'darkling3'][i % 3]),
                         spacing: { outer: 170, inner: 100 }, // Increased spacing to accommodate more enemies
                         startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 450)
-                        movementPattern: 'star-pulse'
+                        movementPattern: 'star-pulse',
+                        midBoss: { type: 'darkmidboss5', position: { x: 0, y: -100 } }
                     },
                     {
-                        // Wave 2: Pentagram formation with rotating enemies - Increased from 15 to 25
+                        // Wave 2: Pentagram formation with rotating enemies - with mid-boss 6
                         formation: 'pentagram',
                         enemies: Array(25).fill().map((_, i) => 
                             ['darkling5', 'darkling6', 'darkling4'][i % 3]),
                         spacing: { outer: 170, inner: 100 }, // Increased spacing
                         startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 450)
-                        movementPattern: 'star-pulse'
+                        movementPattern: 'star-pulse',
+                        midBoss: { type: 'darkmidboss6', position: { x: 0, y: -120 } }
                     },
                     {
-                        // Wave 3: Multi-tiered serpentine attack - Increased from 21 to 35
+                        // Wave 3: Multi-tiered serpentine attack - with mid-boss 7
                         formation: 'serpentine',
                         rows: 5, // Increased from 3 to 5 rows
                         enemies: Array(35).fill().map((_, i) => {
@@ -283,19 +289,21 @@ class MonsterLogic {
                         spacing: { x: 65, y: 40 }, // Reduced spacing slightly
                         startPosition: { x: 0, y: -300 }, // Adjusted Y position (-225 from previous 430)
                         waveFactor: { amplitude: 60, frequency: 0.1 },
-                        movementPattern: 'wave-attack'
+                        movementPattern: 'wave-attack',
+                        midBoss: { type: 'darkmidboss7', position: { x: 0, y: -150 } }
                     },
                     {
-                        // Wave 4: Pentagram formation - Increased from 25 to 35
+                        // Wave 4: Pentagram formation - with mid-boss 8
                         formation: 'pentagram',
                         enemies: Array(35).fill().map((_, i) => 
                             ['darkling5', 'darkling6', 'darkling4','darkling1','darkling2','darkling3' ][i % 6]),
                         spacing: { outer: 200, inner: 100 }, // Increased spacing
                         startPosition: { x: 0, y: -300 }, // Adjusted Y position (-225 from previous 450)
-                        movementPattern: 'star-pulse'
+                        movementPattern: 'star-pulse',
+                        midBoss: { type: 'darkmidboss8', position: { x: 0, y: -100 } }
                     },
                     {
-                        // Wave 5: Nested circles with different rotation directions - Doubled enemy counts
+                        // Wave 5: Nested circles with different rotation directions - with mid-boss 1 and 2 together
                         formation: 'nested-circles',
                         rings: [
                             { 
@@ -315,10 +323,14 @@ class MonsterLogic {
                             }
                         ],
                         startPosition: { x: 0, y: -200 }, // Adjusted Y position (-225 from previous 470)
-                        movementPattern: 'pulsating'
+                        movementPattern: 'pulsating',
+                        midBosses: [
+                            { type: 'darkmidboss1', position: { x: -100, y: -150 } },
+                            { type: 'darkmidboss2', position: { x: 100, y: -150 } }
+                        ]
                     },
                     {
-                        // Wave 6: Staggered assault with three attack lines - Doubled enemy counts
+                        // Wave 6: Staggered assault with three attack lines - with mid-boss 2 and 3 together
                         formation: 'staggered-assault',
                         waves: [
                             {
@@ -344,10 +356,14 @@ class MonsterLogic {
                                 delay: 0
                             }
                         ],
-                        movementPattern: 'pulsating'
+                        movementPattern: 'pulsating',
+                        midBosses: [
+                            { type: 'darkmidboss2', position: { x: -100, y: -150 } },
+                            { type: 'darkmidboss3', position: { x: 100, y: -150 } }
+                        ]
                     },
                     {
-                        // Wave 7: Boss wave - Completely redesigned for more reliability
+                        // Wave 7: Boss wave - with mid-boss 3 and 4 together
                         formation: 'round2-boss',
                         boss: { 
                             type: 'darklingboss2', 
@@ -372,7 +388,11 @@ class MonsterLogic {
                             // Final reinforcements when boss reaches 40% health
                             { type: 'darkling8', count: 6, orbit: { radius: 150, speed: 0.002, offset: Math.PI / 4 } }
                         ],
-                        movementPattern: 'round2-boss-movement'
+                        movementPattern: 'round2-boss-movement',
+                        midBosses: [
+                            { type: 'darkmidboss3', position: { x: -150, y: -150 } },
+                            { type: 'darkmidboss4', position: { x: 150, y: -150 } }
+                        ]
                     }
                 ],
                 bossWave: 7
@@ -380,17 +400,21 @@ class MonsterLogic {
             3: { // Round 3
                 waves: [
                     {
-                        // Wave 1: Hypnotic spiral with alternating enemy types - Doubled from 20 to 40
+                        // Wave 1: Hypnotic spiral with alternating enemy types - with mid-boss 4 and 5 together
                         formation: 'growing-spiral',
                         enemies: Array(40).fill().map((_, i) => 
                             i % 2 === 0 ? 'darkling8' : 'darkling7'),
                         spacing: { angle: 12, radiusStep: 12 }, // Reduced spacing to fit more enemies
                         startPosition: { x: 0, y: -450 }, // Adjusted Y position (-225 from previous 450)
                         growFactor: 0.3,
-                        movementPattern: 'spiral-expand'
+                        movementPattern: 'spiral-expand',
+                        midBosses: [
+                            { type: 'darkmidboss4', position: { x: -100, y: -150 } },
+                            { type: 'darkmidboss5', position: { x: 100, y: -150 } }
+                        ]
                     },
                     {
-                        // Wave 2: Dynamic fractal formation that evolves - Increased seed and children
+                        // Wave 2: Dynamic fractal formation that evolves - with mid-boss 7 and 8 together
                         formation: 'fractal',
                         seed: {
                             enemies: ['darkling10', 'darkling10', 'darkling10', 'darkling10', 'darkling10'], // Added 2 more seed enemies
@@ -407,10 +431,14 @@ class MonsterLogic {
                                 Math.random() < 0.3 ? 'darkling8' : 'darkling7'),
                             offset: { x: [-40, -20, 0, 20, 40], y: [-30, -30, -30, -30, -30] }
                         },
-                        movementPattern: 'fractal-collapse'
+                        movementPattern: 'fractal-collapse',
+                        midBosses: [
+                            { type: 'darkmidboss7', position: { x: -100, y: -150 } },
+                            { type: 'darkmidboss8', position: { x: 100, y: -150 } }
+                        ]
                     },
                     {
-                        // Wave 3: Interlocking rings with coordinated movements - Tripled enemy counts
+                        // Wave 3: Interlocking rings with coordinated movements - with mid-boss 9
                         formation: 'interlocking-rings',
                         rings: [
                             {
@@ -438,10 +466,11 @@ class MonsterLogic {
                                 center: { x: 0, y: -225 } // Adjusted Y position (-225 from previous 450)
                             }
                         ],
-                        movementPattern: 'cosmic-dance'
+                        movementPattern: 'cosmic-dance',
+                        midBoss: { type: 'darkmidboss9', position: { x: 0, y: -100 } }
                     },
                     {
-                        // Wave 4: Fortress formation with more turrets and defenders
+                        // Wave 4: Fortress formation with more turrets and defenders - with mid-boss 10
                         formation: 'fortress',
                         core: {
                             enemies: Array(10).fill('darkling7'), // Doubled from 5
@@ -473,10 +502,11 @@ class MonsterLogic {
                                 { points: [{ x: -120, y: 220 }, { x: 120, y: -220 }], speed: 0.4 } // Added third patrol path
                             ]
                         },
-                        movementPattern: 'fortress-defense'
+                        movementPattern: 'fortress-defense',
+                        midBoss: { type: 'darkmidboss10', position: { x: 0, y: -150 } }
                     },
                     {
-                        // Wave 5: Pulsating nebula with swarming enemies - Doubled enemy count
+                        // Wave 5: Pulsating nebula with swarming enemies - with mid-boss 5 and 10 together
                         formation: 'nebula',
                         clusters: [
                             {
@@ -495,10 +525,14 @@ class MonsterLogic {
                             }
                         ],
                         pulseRate: { min: 0.7, max: 1.3, speed: 0.0005 },
-                        movementPattern: 'nebula-pulse'
+                        movementPattern: 'nebula-pulse',
+                        midBosses: [
+                            { type: 'darkmidboss5', position: { x: -100, y: -150 } },
+                            { type: 'darkmidboss10', position: { x: 100, y: -150 } }
+                        ]
                     },
                     {
-                        // Wave 6: Alchemy crucible - transforming formation - Tripled enemy counts in each phase
+                        // Wave 6: Alchemy crucible - with mid-boss 1, 2, and 3 together
                         formation: 'crucible',
                         phases: [
                             {
@@ -524,10 +558,15 @@ class MonsterLogic {
                             }
                         ],
                         transitionSpeed: 2000,
-                        movementPattern: 'alchemical-transmutation'
+                        movementPattern: 'alchemical-transmutation',
+                        midBosses: [
+                            { type: 'darkmidboss1', position: { x: -120, y: -150 } },
+                            { type: 'darkmidboss2', position: { x: 0, y: -150 } },
+                            { type: 'darkmidboss3', position: { x: 120, y: -150 } }
+                        ]
                     },
                     {
-                        // Wave 7: Dual vortex with periodic enemy pulses - Doubled enemy counts
+                        // Wave 7: Dual vortex with periodic enemy pulses - with mid-boss 11 (displayed at 100% size)
                         formation: 'dual-vortex',
                         vortices: [
                             {
@@ -549,7 +588,32 @@ class MonsterLogic {
                             enemies: Array(15).fill('darkling7'), // Tripled from 5
                             spacing: { x: 20, y: 0 } // Reduced spacing to fit more enemies
                         },
-                        movementPattern: 'vortex-collapse'
+                        movementPattern: 'vortex-collapse',
+                        midBoss: { 
+                            type: 'darkmidboss11', 
+                            position: { x: 0, y: -150 },
+                            scale: 1.0, // Display at 100% size
+                            health: 150,
+                            specialAttack: {
+                                enabled: true,
+                                cooldown: 3500, // 3.5 seconds cooldown as specified
+                                patterns: [
+                                    // First pattern at full health
+                                    {
+                                        type: 'burst',
+                                        projectiles: 16,
+                                        speed: 3
+                                    },
+                                    // Second pattern at half health
+                                    {
+                                        type: 'radial',
+                                        projectiles: 24,
+                                        speed: 2.5
+                                    }
+                                ],
+                                healthThreshold: 0.5 // Switch patterns at 50% health
+                            }
+                        }
                     },
                     {
                         // Wave 8: Final boss with new tougher vanguard enemies - replaced previous minions
@@ -613,69 +677,6 @@ class MonsterLogic {
                     }
                 ],
                 bossWave: 8
-            },
-            4: { // Round 4
-                waves: [
-                    {
-                        // Wave 1: Elite special formation with increased enemies
-                        formation: 'elite-formation',
-                        enemies: Array(20).fill().map((_, i) => 
-                            ['darkling8', 'darkling10', 'darkling7'][i % 3]),
-                        spacing: { x: 50, y: 35 },
-                        startPosition: { x: 0, y: 80 },
-                        movementPattern: 'elite-movement'
-                    },
-                    {
-                        // Wave 2: Advanced spiral
-                        formation: 'growing-spiral',
-                        enemies: Array(12).fill().map((_, i) => 
-                            i % 2 === 0 ? 'darkling10' : 'darkling8'),
-                        spacing: { angle: 18, radiusStep: 15 },
-                        startPosition: { x: 0, y: 100 },
-                        growFactor: 0.3,
-                        movementPattern: 'spiral-expand'
-                    },
-                    {
-                        // Wave 3: Circular orbiting formation
-                        formation: 'orbital',
-                        rings: 2,
-                        enemies: Array(12).fill().map((_, i) => 
-                            i < 4 ? 'darkling3' : 'darkling2'),
-                        spacing: { radius: [80, 150] },
-                        startPosition: { x: 0, y: 120 },
-                        movementPattern: 'converge'
-                    },
-                    {
-                        // Wave 4: Flying-V with flanking enemies
-                        formation: 'multi-formation',
-                        subFormations: [
-                            {
-                                type: 'v',
-                                enemies: Array(5).fill('darkling3'),
-                                spacing: { x: 50, y: 30 },
-                                position: { x: 0, y: 80 }
-                            },
-                            {
-                                type: 'arc',
-                                enemies: Array(5).fill('darkling1'),
-                                spacing: { radius: 180, arc: 120 },
-                                position: { x: 0, y: 40 }
-                            }
-                        ],
-                        movementPattern: 'swoop'
-                    },
-                    {
-                        // Wave 5: Boss wave with circling minions
-                        formation: 'boss-with-satellites',
-                        boss: { type: 'darklingboss1', position: { x: 0, y: 100 } },
-                        minions: [
-                            { type: 'darkling2', count: 6, orbit: { radius: 120, speed: 0.002 } },
-                            { type: 'darkling1', count: 4, orbit: { radius: 200, speed: -0.001 } }
-                        ],
-                        movementPattern: 'boss-attack'
-                    }
-                ],
-                bossWave: 5
             }
         };
     }
@@ -699,7 +700,18 @@ class MonsterLogic {
             'darkling10': 10,
             'darkling11': 15, // Mini boss 1 - tougher than regular enemies
             'darkling12': 20, // Mini boss 2 - even tougher
-            'darkling13': 10   // Elite enemy - tougher than regular but not as tough as mini bosses
+            'darkling13': 10,  // Elite enemy - tougher than regular but not as tough as mini bosses
+            'darkmidboss1': 50, // Round 1 Wave 1 mid-boss
+            'darkmidboss2': 50, // Round 1 Wave 2 mid-boss
+            'darkmidboss3': 75, // Round 1 Wave 3 mid-boss
+            'darkmidboss4': 75, // Round 1 Wave 4 mid-boss
+            'darkmidboss5': 100, // Round 2 Wave 1 mid-boss
+            'darkmidboss6': 100, // Round 2 Wave 2 mid-boss
+            'darkmidboss7': 100, // Round 2 Wave 3 mid-boss
+            'darkmidboss8': 100, // Round 2 Wave 4 mid-boss
+            'darkmidboss9': 150, // Round 3 Wave 3 mid-boss
+            'darkmidboss10': 150, // Round 3 Wave 4 mid-boss
+            'darkmidboss11': 150, // Round 3 Wave 7 special mid-boss
         };
         return healthMap[type] || 1; // Default to 1 if type not found
     }
@@ -857,6 +869,12 @@ class MonsterLogic {
         
         // Define baseSpeed for all enemy projectiles
         const baseSpeed = 3;
+        
+        // Check if the enemy is a mid-boss and use specialized patterns
+        if (type.startsWith('darkmidboss')) {
+            // Use the specialized mid-boss projectile pattern function
+            return getMidBossProjectilePattern(type, x, y);
+        }
         
         switch(type) {
             case 'darkling2':
@@ -1031,24 +1049,35 @@ class MonsterLogic {
      */
     getShotCooldown(type, health) {
         const cooldownMap = {
-            'darklingboss1': 2000, // Reduced from 3000
-            'darklingboss2': 1500, // Reduced from 2000
-            'darklingboss3': 1200, // Final boss - reduced from 2000 to make more aggressive
-            'darklingboss4': 3000, // Reduced from 3500
-            'darkling1': 3000,     // Now these enemies also shoot
-            'darkling2': 3000,
+            'darklingboss1': 1500, // Boss cooldowns consistent with EnemySystem.js
+            'darklingboss2': 1500,
+            'darklingboss3': 1500,
+            'darkling1': 0,     // Doesn't shoot
+            'darkling2': 2500,
             'darkling3': 2500,
-            'darkling4': 2000,
-            'darkling5': 1500,
-            'darkling6': 2000,  // Previously 4000
-            'darkling7': 1800,  // Previously 3000
-            'darkling8': 1800,  // Previously 3000
-            'darkling9': 2500,  // Previously didn't fire
-            'darkling10': 2000, // Previously 3000
-            // New vanguard enemies
-            'darkling11': 3600, // Uses boss1's attack pattern but 50% slower (2400 * 1.5)
-            'darkling12': 2250, // Uses boss2's attack pattern but 50% slower (1500 * 1.5)
-            'darkling13': 1600  // Similar to darkling7 but more aggressive
+            'darkling4': 2500,
+            'darkling5': 2000,
+            'darkling6': 2000,
+            'darkling7': 2000,
+            'darkling8': 1500,
+            'darkling9': 0,     // Doesn't shoot
+            'darkling10': 1500,
+            // Mini-boss enemies
+            'darkling11': 2400,
+            'darkling12': 2250,
+            'darkling13': 1600,
+            // Mid-boss cooldowns - matching EnemySystem.js
+            'darkmidboss1': 1800, // Aggressive 2-shot attack pattern
+            'darkmidboss2': 2200, // Defensive flight pattern
+            'darkmidboss3': 1900, // Balanced aggressive/defensive
+            'darkmidboss4': 1900, // Balanced aggressive/defensive
+            'darkmidboss5': 1700, // More powerful 3-shot attack pattern
+            'darkmidboss6': 1700, // More powerful 3-shot attack pattern
+            'darkmidboss7': 1700, // More powerful 3-shot attack pattern
+            'darkmidboss8': 1700, // More powerful 3-shot attack pattern
+            'darkmidboss9': 1600, // Aggressive attack pattern
+            'darkmidboss10': 1600, // Aggressive attack pattern
+            'darkmidboss11': 1300  // Special mid-boss with changing projectile patterns
         };
         
         // If enemy is a boss with low health, reduce cooldown even further (more aggressive at low health)
@@ -1056,7 +1085,7 @@ class MonsterLogic {
             return 1000; // Even more aggressive when at low health
         }
         
-        return cooldownMap[type] || 3000;  // Default reduced from 4000
+        return cooldownMap[type] || 3000;  // Default for unknown enemy types
     }
 
     /**
@@ -1074,6 +1103,12 @@ class MonsterLogic {
         // Remove conditional speed change for darklingboss2
         if (type.includes('boss')) {
             return 1.5; // All bosses are slower
+        }
+        
+        // Fix for mid-bosses moving too fast - reduce their speed
+        if (type.startsWith('darkmidboss')) {
+            // Reduce speed for all mid-bosses
+            return 0.9; // Significantly slower than normal enemies
         }
         
         if (['darkling5', 'darkling9'].includes(type)) {
@@ -1107,8 +1142,19 @@ class MonsterLogic {
             'darkling10': 45,
             'darkling11': 60, // Mini boss 1 - tougher than regular enemies
             'darkling12': 60, // Mini boss 2 - even tougher
-            
-
+            'darkling13': 40, // Elite enemy
+            // Mid-boss point values
+            'darkmidboss1': 100, // Round 1 Wave 1 mid-boss (50 HP)
+            'darkmidboss2': 100, // Round 1 Wave 2 mid-boss (50 HP)
+            'darkmidboss3': 150, // Round 1 Wave 3 mid-boss (75 HP)
+            'darkmidboss4': 150, // Round 1 Wave 4 mid-boss (75 HP)
+            'darkmidboss5': 200, // Round 2 Wave 1 mid-boss (100 HP)
+            'darkmidboss6': 200, // Round 2 Wave 2 mid-boss (100 HP)
+            'darkmidboss7': 200, // Round 2 Wave 3 mid-boss (100 HP)
+            'darkmidboss8': 200, // Round 2 Wave 4 mid-boss (100 HP)
+            'darkmidboss9': 300, // Round 3 Wave 3 mid-boss (150 HP)
+            'darkmidboss10': 300, // Round 3 Wave 4 mid-boss (150 HP)
+            'darkmidboss11': 350  // Round 3 Wave 7 special mid-boss (150 HP)
         };
         
         return pointsMap[type] || 10;
@@ -1833,6 +1879,12 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
         // Define baseSpeed for all enemy projectiles
         const baseSpeed = 3;
         
+        // Check if the enemy is a mid-boss and use specialized patterns
+        if (type.startsWith('darkmidboss')) {
+            // Use the specialized mid-boss projectile pattern function
+            return getMidBossProjectilePattern(type, x, y);
+        }
+        
         switch(type) {
             case 'darkling2':
             case 'darkling3':
@@ -2112,6 +2164,337 @@ const baseScale = 0.8 + Math.sin(t * 0.001) * 0.2;
     }
 }
 
+/**
+ * Mid-boss projectile patterns
+ * @param {string} bossType - Type of mid-boss
+ * @param {number} x - X position of the mid-boss
+ * @param {number} y - Y position of the mid-boss
+ * @returns {array} - Array of projectiles with speeds and angles
+ */
+function getMidBossProjectilePattern(bossType, x, y) {
+    const projectiles = [];
+    const baseSpeed = 3.0; // Slightly reduced from 3.5 to make projectiles more manageable
+    const playerX = 0; // Center of the screen
+    
+    // Helper function to create a projectile
+    const createProjectile = (angle, speed, size = 1.0) => {
+        const rad = angle * Math.PI / 180;
+        return {
+            x: x,
+            y: y,
+            dx: Math.cos(rad) * speed,
+            dy: Math.sin(rad) * speed,
+            angle: angle,
+            speed: speed,
+            width: 30 * size,
+            height: 30 * size,
+            sprite: 'darklingshot7', // Use the rotating projectile sprite
+            rotate: true,
+            rotation: 0,
+            rotationSpeed: Math.random() * 0.1 + 0.05
+        };
+    };
+
+    // Helper for targeted projectiles
+    const createTargetedProjectile = (speed, size = 1.0) => {
+        const dx = playerX - x;
+        const dy = 200 - y; // Player is fixed at y=200
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        return createProjectile(angle, speed, size);
+    };
+    
+    // Helper for creating circular patterns (like the final boss but fewer projectiles)
+    const createCirclePattern = (count, speed, angleOffset = 0, size = 1.0) => {
+        const angleStep = 360 / count;
+        for (let i = 0; i < count; i++) {
+            const angle = i * angleStep + angleOffset;
+            projectiles.push(createProjectile(angle, speed, size));
+        }
+    };
+    
+    // Helper for creating spiral patterns
+    const createSpiralPattern = (count, speed, size = 1.0) => {
+        const baseAngle = Math.random() * 360; // Random starting angle
+        for (let i = 0; i < count; i++) {
+            // Create a spiral effect with varying angles
+            const angle = baseAngle + (i * 15);
+            projectiles.push(createProjectile(angle, speed * (0.8 + (i * 0.05)), size));
+        }
+    };
+    
+    // Helper for creating targeted spread patterns
+    const createTargetedSpread = (count, speed, spreadAngle = 30, size = 1.0) => {
+        // Get angle to player
+        const dx = playerX - x;
+        const dy = 200 - y;
+        const centerAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+        
+        // Create spread around player's position
+        const angleStep = spreadAngle / (count - 1);
+        for (let i = 0; i < count; i++) {
+            const angle = centerAngle - (spreadAngle / 2) + (i * angleStep);
+            projectiles.push(createProjectile(angle, speed, size));
+        }
+    };
+    
+    switch(bossType) {
+        case 'darkmidboss1': // Slower version of final boss pattern 1
+            // Three aimed shots plus two flanking shots
+            projectiles.push(createTargetedProjectile(baseSpeed * 1.1, 1.1));
+            createTargetedSpread(3, baseSpeed, 20, 0.9);
+            break;
+            
+        case 'darkmidboss2': // Defensive arc pattern
+            // Wide spread with central targeted shot
+            for (let angle = 60; angle <= 120; angle += 15) {
+                projectiles.push(createProjectile(angle, baseSpeed, 0.9));
+            }
+            projectiles.push(createTargetedProjectile(baseSpeed * 1.2, 1.1));
+            break;
+            
+        case 'darkmidboss3': // Balanced attack with spread and targeted shots
+            // Mini-version of the final boss's pattern - aimed shot with flanking shots
+            if (Math.random() < 0.7) {
+                // Targeted shot with two flanking shots
+                projectiles.push(createTargetedProjectile(baseSpeed * 1.2, 1.1));
+                const dx = playerX - x;
+                const dy = 200 - y;
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                projectiles.push(createProjectile(angle - 20, baseSpeed, 0.9));
+                projectiles.push(createProjectile(angle + 20, baseSpeed, 0.9));
+            } else {
+                // Occasionally do a 3-way spread
+                for (let angle = 75; angle <= 105; angle += 15) {
+                    projectiles.push(createProjectile(angle, baseSpeed * 1.1, 1.0));
+                }
+            }
+            break;
+            
+        case 'darkmidboss4': // Similar to darkmidboss3 but with different pattern
+            // Alternating pattern - mimics final boss's versatility
+            if (Math.random() < 0.6) {
+                // Pattern 1: 5-shot narrow fan
+                for (let angle = 80; angle <= 100; angle += 5) {
+                    projectiles.push(createProjectile(angle, baseSpeed * 1.1, 0.9));
+                }
+            } else {
+                // Pattern 2: 4-shot wider spread
+                projectiles.push(createProjectile(70, baseSpeed, 1.0));
+                projectiles.push(createProjectile(80, baseSpeed * 1.1, 1.0));
+                projectiles.push(createProjectile(100, baseSpeed * 1.1, 1.0));
+                projectiles.push(createProjectile(110, baseSpeed, 1.0));
+            }
+            break;
+            
+        case 'darkmidboss5': // Partial circular pattern
+            // Semi-circular pattern (covers ~120 degrees in front)
+            createTargetedSpread(5, baseSpeed * 1.1, 60, 0.9);
+            break;
+            
+        case 'darkmidboss6': // Arc pattern with focused center
+            // Similar to final boss's behavior but more predictable
+            createTargetedSpread(3, baseSpeed * 1.2, 15, 1.1);
+            projectiles.push(createProjectile(70, baseSpeed * 0.9, 0.8));
+            projectiles.push(createProjectile(110, baseSpeed * 0.9, 0.8));
+            break;
+            
+        case 'darkmidboss7': // Spiral pattern
+            // Creates a mini spiral pattern like the final boss but slower
+            createSpiralPattern(5, baseSpeed, 0.9);
+            break;
+            
+        case 'darkmidboss8': // Wide arc with multiple projectiles
+            // Covers a wide area similar to final boss but fewer projectiles
+            for (let angle = 45; angle <= 135; angle += 15) {
+                projectiles.push(createProjectile(angle, baseSpeed * (0.9 + Math.random() * 0.3), 0.9));
+            }
+            break;
+            
+        case 'darkmidboss9': // Focused attack with partial circular pattern
+            // Mini version of the final boss's devastating attack
+            if (Math.random() < 0.7) {
+                // Main pattern: targeted shot with small circular pattern
+                projectiles.push(createTargetedProjectile(baseSpeed * 1.3, 1.2));
+                
+                // Add a partial circle of shots (6 shots covering 180 degrees)
+                const startAngle = Math.random() * 180;
+                for (let i = 0; i < 6; i++) {
+                    const angle = startAngle + (i * 30);
+                    projectiles.push(createProjectile(angle, baseSpeed, 0.8));
+                }
+            } else {
+                // Alternate pattern: wide targeted spread
+                createTargetedSpread(7, baseSpeed * 1.1, 60, 0.9);
+            }
+            break;
+            
+        case 'darkmidboss10': // Similar to darkmidboss9 but with different pattern mix
+            if (Math.random() < 0.6) {
+                // Main pattern: small circular burst (8 shots)
+                createCirclePattern(8, baseSpeed * 0.9, Math.random() * 45, 0.9);
+            } else {
+                // Alternate pattern: targeted 3-way with faster projectiles
+                projectiles.push(createTargetedProjectile(baseSpeed * 1.4, 1.1));
+                
+                // Add two faster flanking shots
+                const dx = playerX - x;
+                const dy = 200 - y;
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                projectiles.push(createProjectile(angle - 25, baseSpeed * 1.2, 0.9));
+                projectiles.push(createProjectile(angle + 25, baseSpeed * 1.2, 0.9));
+            }
+            break;
+            
+        case 'darkmidboss11': // Special mid-boss with health-based patterns
+            // This boss has two distinct patterns based on health
+            if (Math.random() < 0.5) { // Simulating health check
+                // First pattern - circular burst (like final boss but fewer projectiles)
+                createCirclePattern(10, baseSpeed * 1.0, Math.random() * 36, 1.0);
+            } else {
+                // Second pattern - targeted spread with additional circular shots
+                projectiles.push(createTargetedProjectile(baseSpeed * 1.3, 1.2));
+                
+                // Add circular pattern of slower shots
+                for (let angle = 0; angle < 360; angle += 60) {
+                    projectiles.push(createProjectile(angle, baseSpeed * 0.8, 0.8));
+                }
+            }
+            break;
+            
+        default:
+            // Fallback - simple 3-way pattern
+            projectiles.push(createProjectile(80, baseSpeed));
+            projectiles.push(createProjectile(90, baseSpeed));
+            projectiles.push(createProjectile(100, baseSpeed));
+    }
+    
+    return projectiles;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { MonsterLogic };
+}
+
+/**
+ * Check if an enemy is a mid-boss
+ * @param {string} enemyType - The type of enemy to check
+ * @returns {boolean} - True if the enemy is a mid-boss
+ */
+function isMidBoss(enemyType) {
+    return enemyType.startsWith('darkmidboss');
+}
+
+/**
+ * Get specialized mid-boss movement pattern
+ * This is called from game_controller.js when initializing enemies
+ * @param {string} bossType - Type of mid-boss
+ * @param {number} startX - Starting X position
+ * @param {number} startY - Starting Y position
+ * @returns {Function} - Movement function that returns position based on time
+ */
+function getMidBossMovement(bossType, startX, startY) {
+    // Store state for smoother transitions
+    const state = {
+        lastTeleport: 0,
+        teleportX: 0,
+        teleportY: 0,
+        phaseTime: 0,
+        currentPhase: 0
+    };
+    
+    // Mid-bosses should have a slow, deliberate movement pattern like a slower version of the final boss
+    return (timestamp) => {
+        // Different movement patterns based on boss type
+        let wiggleX, wiggleY;
+        
+        // Update phase time for all bosses
+        if (!state.phaseTime) {
+            state.phaseTime = timestamp;
+        }
+        
+        // Every 5 seconds, change phase for variance but maintain smooth transitions
+        if (timestamp - state.phaseTime > 5000) {
+            state.currentPhase = (state.currentPhase + 1) % 3;
+            state.phaseTime = timestamp;
+        }
+        
+        // Phase progress for smooth transitions (0.0 to 1.0)
+        const phaseProgress = Math.min(1.0, (timestamp - state.phaseTime) / 5000);
+        
+        switch(bossType) {
+            case 'darkmidboss1':
+            case 'darkmidboss2':
+                // Smooth figure-8 pattern with slight vertical movement
+                wiggleX = Math.sin(timestamp * 0.0003) * 80;
+                wiggleY = Math.sin(timestamp * 0.0006) * 25;
+                break;
+                
+            case 'darkmidboss3':
+            case 'darkmidboss4':
+                // Smooth arc pattern that resembles the final boss but slower
+                wiggleX = Math.sin(timestamp * 0.0002) * 100;
+                wiggleY = Math.cos(timestamp * 0.0003) * 30 + Math.sin(timestamp * 0.0001) * 15;
+                break;
+                
+            case 'darkmidboss5':
+            case 'darkmidboss6':
+                // Slow pendulum-like movement with subtle vertical oscillation
+                wiggleX = Math.sin(timestamp * 0.00025) * 90;
+                wiggleY = Math.sin(timestamp * 0.0001) * 25;
+                break;
+                
+            case 'darkmidboss7':
+            case 'darkmidboss8':
+                // Smooth sinusoidal path resembling a simplified final boss pattern
+                wiggleX = Math.sin(timestamp * 0.00022) * 100;
+                wiggleY = Math.sin(timestamp * 0.00012) * 40;
+                break;
+                
+            case 'darkmidboss9':
+            case 'darkmidboss10':
+                // Gentle elliptical path
+                wiggleX = Math.sin(timestamp * 0.0002) * 100;
+                wiggleY = Math.cos(timestamp * 0.0002) * 40;
+                break;
+                
+            case 'darkmidboss11':
+                // Special smooth teleport pattern (with deliberate positioning)
+                // Teleport every 6.5 seconds instead of 4 to make it less jumpy
+                if (!state.lastTeleport || timestamp - state.lastTeleport > 6500) {
+                    // Store current position
+                    const oldTeleportX = state.teleportX || 0;
+                    const oldTeleportY = state.teleportY || 0;
+                    
+                    // Set new target position
+                    state.teleportX = Math.random() * 160 - 80; // Reduced range for less jumpiness
+                    state.teleportY = Math.random() * 40 - 20;  // Reduced vertical range
+                    state.lastTeleport = timestamp;
+                    state.teleportStartTime = timestamp;
+                }
+                
+                // Calculate how far through the teleport we are (0.0 to 1.0)
+                const teleportTime = 500; // ms for teleport transition
+                const teleportProgress = Math.min(1.0, (timestamp - state.teleportStartTime) / teleportTime);
+                
+                // Smooth easing function for transition
+                const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+                const smoothProgress = easeOutCubic(teleportProgress);
+                
+                // Apply smooth movement toward target position
+                wiggleX = state.teleportX + Math.sin(timestamp * 0.0006) * 20;
+                wiggleY = state.teleportY + Math.sin(timestamp * 0.0004) * 15;
+                break;
+                
+            default:
+                // Default mid-boss movement - smooth and predictable
+                wiggleX = Math.sin(timestamp * 0.0003) * 70;
+                wiggleY = Math.sin(timestamp * 0.0002) * 25;
+        }
+        
+        return {
+            x: startX + wiggleX,
+            y: startY + wiggleY
+        };
+    };
 }

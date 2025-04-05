@@ -90,6 +90,11 @@ class GameRenderer {
         this.loadSprite('shinspecialbeamleftside', 'assets/images/darklings/shinspecialbeamleftside.png');
         this.loadSprite('shinspecialbeamrightside', 'assets/images/darklings/shinspecialbeamrightside.png');
         
+        // Load mid-boss sprites
+        for (let i = 1; i <= 11; i++) {
+            this.loadSprite(`darkmidboss${i}`, `assets/images/darklings/darkmidboss${i}.png`);
+        }
+        
         // Load enemy sprites - corrected naming convention from MOB to mob (lowercase)
         for (let i = 1; i <= 13; i++) { // Increased to include darkling11, darkling12, darkling13
             this.loadSprite(`darkling${i}`, `assets/images/darklings/darklingmob${i}.png`);
