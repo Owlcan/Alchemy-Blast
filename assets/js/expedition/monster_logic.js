@@ -2400,7 +2400,12 @@ function getMidBossMovement(bossType, startX, startY) {
         teleportX: 0,
         teleportY: 0,
         phaseTime: 0,
-        currentPhase: 0
+        currentPhase: 0,
+        // Add movement range constraints - allows movement within screen bounds but not off-screen
+        movementRange: {
+            x: { min: -250, max: 250 },  // Wider horizontal range but still on screen
+            y: { min: 50, max: 350 }     // Allow more vertical movement while staying visible
+        }
     };
     
     // Mid-bosses should have a slow, deliberate movement pattern like a slower version of the final boss
@@ -2422,79 +2427,140 @@ function getMidBossMovement(bossType, startX, startY) {
         // Phase progress for smooth transitions (0.0 to 1.0)
         const phaseProgress = Math.min(1.0, (timestamp - state.phaseTime) / 5000);
         
+        // Further reduce movement speed with smaller coefficients (about 40% slower)
         switch(bossType) {
             case 'darkmidboss1':
             case 'darkmidboss2':
-                // Smooth figure-8 pattern with slight vertical movement
-                wiggleX = Math.sin(timestamp * 0.0003) * 80;
-                wiggleY = Math.sin(timestamp * 0.0006) * 25;
+                // Smoother figure-8 pattern with reduced amplitude
+                wiggleX = Math.sin(timestamp * 0.0002) * 100;
+                wiggleY = Math.sin(timestamp * 0.0004) * 35;
                 break;
                 
             case 'darkmidboss3':
+                // Boss1-like movement pattern but slower
+                wiggleX = Math.sin(timestamp * 0.00018) * 120; // Wide horizontal movement like boss1
+                wiggleY = Math.sin(timestamp * 0.00010) * 60;  // Similar vertical movement to boss1
+                break;
+                
             case 'darkmidboss4':
-                // Smooth arc pattern that resembles the final boss but slower
-                wiggleX = Math.sin(timestamp * 0.0002) * 100;
-                wiggleY = Math.cos(timestamp * 0.0003) * 30 + Math.sin(timestamp * 0.0001) * 15;
+                // Smoother arc pattern - reduced frequency for gentler movement
+                wiggleX = Math.sin(timestamp * 0.00015) * 120;
+                wiggleY = Math.cos(timestamp * 0.0002) * 40 + Math.sin(timestamp * 0.00008) * 20;
                 break;
                 
             case 'darkmidboss5':
+                // Boss2-like aggressive movement pattern but scaled down
+                wiggleX = Math.sin(timestamp * 0.00022) * 120; // Fast, wide horizontal motion like boss2
+                wiggleY = Math.sin(timestamp * 0.00008) * 20;  // Slight vertical movement like boss2
+                break;
+                
             case 'darkmidboss6':
-                // Slow pendulum-like movement with subtle vertical oscillation
-                wiggleX = Math.sin(timestamp * 0.00025) * 90;
-                wiggleY = Math.sin(timestamp * 0.0001) * 25;
+                // Slower pendulum with more natural feel
+                wiggleX = Math.sin(timestamp * 0.00018) * 110;
+                wiggleY = Math.sin(timestamp * 0.00008) * 35;
                 break;
                 
             case 'darkmidboss7':
+                // Modified boss3-like teleporting behavior but more predictable
+                // Teleport every 7 seconds to new position
+                if (!state.lastTeleport || timestamp - state.lastTeleport > 7000) {
+                    // Choose from a set of predetermined positions rather than random
+                    const positions = [
+                        { x: -100, y: 20 },
+                        { x: 100, y: 20 },
+                        { x: 0, y: 30 },
+                        { x: -80, y: -20 },
+                        { x: 80, y: -20 }
+                    ];
+                    const posIndex = Math.floor(timestamp / 7000) % positions.length;
+                    state.teleportX = positions[posIndex].x;
+                    state.teleportY = positions[posIndex].y;
+                    state.lastTeleport = timestamp;
+                    state.teleportStartTime = timestamp;
+                }
+                
+                // Calculate teleport progress with smoother transition
+                const teleportTime = 800;
+                const teleportProgress = Math.min(1.0, (timestamp - state.teleportStartTime) / teleportTime);
+                
+                // Use easing function for smoother transition
+                const easeInOutQuad = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                const smoothProgress = easeInOutQuad(teleportProgress);
+                
+                // Small oscillation on top of the teleport movement
+                wiggleX = state.teleportX + Math.sin(timestamp * 0.0003) * 20;
+                wiggleY = state.teleportY + Math.sin(timestamp * 0.0002) * 15;
+                break;
+                
             case 'darkmidboss8':
-                // Smooth sinusoidal path resembling a simplified final boss pattern
-                wiggleX = Math.sin(timestamp * 0.00022) * 100;
-                wiggleY = Math.sin(timestamp * 0.00012) * 40;
+                // Smoother path with compound sine waves for more organic movement
+                wiggleX = Math.sin(timestamp * 0.00015) * 120 + Math.sin(timestamp * 0.0003) * 30;
+                wiggleY = Math.sin(timestamp * 0.0001) * 50 + Math.cos(timestamp * 0.00025) * 20;
                 break;
                 
             case 'darkmidboss9':
+                // Combined boss1 and boss2 movements - aggressive figure-8
+                wiggleX = Math.sin(timestamp * 0.00020) * 130;
+                wiggleY = Math.sin(timestamp * 0.00040) * 50;
+                break;
+                
             case 'darkmidboss10':
-                // Gentle elliptical path
-                wiggleX = Math.sin(timestamp * 0.0002) * 100;
-                wiggleY = Math.cos(timestamp * 0.0002) * 40;
+                // Three-phase combat movement like bosses use
+                switch(state.currentPhase) {
+                    case 0: // Defensive phase - small movements
+                        wiggleX = Math.sin(timestamp * 0.00016) * 60;
+                        wiggleY = Math.cos(timestamp * 0.00010) * 25;
+                        break;
+                    case 1: // Attack phase - wider, faster movements
+                        wiggleX = Math.sin(timestamp * 0.00025) * 120;
+                        wiggleY = Math.cos(timestamp * 0.00020) * 40;
+                        break;
+                    case 2: // Recovery phase - slow, small movements
+                        wiggleX = Math.sin(timestamp * 0.00010) * 40;
+                        wiggleY = Math.cos(timestamp * 0.00008) * 20;
+                        break;
+                    default:
+                        wiggleX = Math.sin(timestamp * 0.00016) * 80;
+                        wiggleY = Math.cos(timestamp * 0.00016) * 30;
+                }
                 break;
                 
             case 'darkmidboss11':
-                // Special smooth teleport pattern (with deliberate positioning)
-                // Teleport every 6.5 seconds instead of 4 to make it less jumpy
-                if (!state.lastTeleport || timestamp - state.lastTeleport > 6500) {
-                    // Store current position
-                    const oldTeleportX = state.teleportX || 0;
-                    const oldTeleportY = state.teleportY || 0;
-                    
-                    // Set new target position
-                    state.teleportX = Math.random() * 160 - 80; // Reduced range for less jumpiness
-                    state.teleportY = Math.random() * 40 - 20;  // Reduced vertical range
+                // Special mid-boss with final boss-like teleport pattern
+                if (!state.lastTeleport || timestamp - state.lastTeleport > 8000) { // Increased teleport delay
+                    // Set new target position with wider range
+                    state.teleportX = Math.random() * 200 - 100;
+                    state.teleportY = Math.random() * 80 - 40;
                     state.lastTeleport = timestamp;
                     state.teleportStartTime = timestamp;
                 }
                 
                 // Calculate how far through the teleport we are (0.0 to 1.0)
-                const teleportTime = 500; // ms for teleport transition
-                const teleportProgress = Math.min(1.0, (timestamp - state.teleportStartTime) / teleportTime);
+                const specialTeleportTime = 900; // Longer transition time for smoother movement
+                const specialTeleportProgress = Math.min(1.0, (timestamp - state.teleportStartTime) / specialTeleportTime);
                 
-                // Smooth easing function for transition
-                const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-                const smoothProgress = easeOutCubic(teleportProgress);
+                // Smoother easing function for transition
+                const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                const specialSmoothProgress = easeInOutCubic(specialTeleportProgress);
                 
-                // Apply smooth movement toward target position
-                wiggleX = state.teleportX + Math.sin(timestamp * 0.0006) * 20;
-                wiggleY = state.teleportY + Math.sin(timestamp * 0.0004) * 15;
+                // Apply smooth movement toward target position with subtle oscillation
+                wiggleX = state.teleportX + Math.sin(timestamp * 0.0004) * 25;
+                wiggleY = state.teleportY + Math.sin(timestamp * 0.0003) * 20;
                 break;
                 
             default:
-                // Default mid-boss movement - smooth and predictable
-                wiggleX = Math.sin(timestamp * 0.0003) * 70;
-                wiggleY = Math.sin(timestamp * 0.0002) * 25;
+                // Default mid-boss movement - smoother and more varied
+                wiggleX = Math.sin(timestamp * 0.0002) * 90 + Math.cos(timestamp * 0.0004) * 30;
+                wiggleY = Math.sin(timestamp * 0.00015) * 40 + Math.sin(timestamp * 0.0003) * 15;
         }
         
+        // Apply movement constraints to keep bosses on screen but allow more freedom
+        const finalX = Math.max(state.movementRange.x.min, Math.min(state.movementRange.x.max, startX + wiggleX));
+        const finalY = Math.max(state.movementRange.y.min, Math.min(state.movementRange.y.max, startY + wiggleY));
+        
         return {
-            x: startX + wiggleX,
-            y: startY + wiggleY
+            x: finalX,
+            y: finalY
         };
     };
 }

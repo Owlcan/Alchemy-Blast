@@ -32,7 +32,7 @@ class GameController {
             health: 100,
             shield: 0,
             maxShield: 0,
-            shieldRegenRate: 0,
+            shieldRegenRate: 0.1, // Much slower regeneration (6 points per second)
             lastDamageTime: 0,
             speed: 5,
             direction: 'right',
@@ -1998,13 +1998,16 @@ class GameController {
             }
         }
         
-        // Regenerate shield if applicable (for Aliza)
-        if (this.player.shieldRegenRate > 0 && this.player.shield < this.player.maxShield) {
+
+        // Regenerate shield if applicable (for Aliza) - with delay after being hit
+        if (this.player.shieldRegenRate > 0 && 
+            this.player.shield < this.player.maxShield &&
+            Date.now() - (this.player.lastShieldHit || 0) > 3000) { // 3 second delay
             this.player.shield = Math.min(
                 this.player.maxShield,
                 this.player.shield + this.player.shieldRegenRate
-            );
-        }
+    );
+}
         
         // Check if we should spawn flyby enemies
         if (this.monsterLogic && this.monsterLogic.shouldSpawnFlyby(timestamp)) {
@@ -2680,6 +2683,7 @@ class GameController {
         } else if (this.gameState.selectedCharacter === 'aliza') {
             // Aliza: Shield takes damage first (she starts with a shield)
             if (this.player.shield > 0) {
+                this.player.lastShieldHit = Date.now();
                 // Take 25% of max shield per hit instead of fixed amount
                 const shieldDamage = this.player.maxShield * 0.25;
                 this.player.shield = Math.max(0, this.player.shield - shieldDamage);

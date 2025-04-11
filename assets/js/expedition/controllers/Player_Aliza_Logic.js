@@ -507,7 +507,7 @@ class PlayerAlizaLogic {
         
         for (let i = 0; i < burstCount; i++) {
             const angle = i * angleStep;
-            const speed = 5 + Math.random() * 3; // Random speed between 5-8
+            const speed = 7 + Math.random() * 3; // Random speed between 5-8
             
             // Calculate initial velocity based on angle
             const vx = Math.cos(angle) * speed;
@@ -520,12 +520,12 @@ class PlayerAlizaLogic {
                 vx, 
                 vy,
                 {
-                    damage: 5,
+                    damage: 50,
                     sprite: 'alizashot3',
                     isSpecialAttack: true,
                     isHoming: true,
                     homingStrength: 0.3,
-                    homingDelay: i * 200, // Stagger homing activation
+                    homingDelay: i * 100, // Stagger homing activation
                     initialDelay: i * 100, // Stagger initial launch
                     impactSprite: 'alizashotimpact2'
                 }
@@ -563,7 +563,7 @@ class PlayerAlizaLogic {
                 y: position.y - 20,
                 vx: vx,
                 vy: vy,
-                damage: 5,
+                damage: 50,
                 sprite: 'alizashot3',
                 isSpecialAttack: true,
                 isHoming: true,

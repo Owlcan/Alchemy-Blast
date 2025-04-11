@@ -431,7 +431,7 @@ class GameRenderer {
             this.ctx.drawImage(
                 logo, 
                 (this.canvas.width - logoWidth) / 2, 
-                50, 
+                10, 
                 logoWidth, 
                 logoHeight
             );
@@ -469,7 +469,7 @@ class GameRenderer {
      */
     drawCharacterOption(character, x, y, width, height) {
         // Draw button background
-        this.ctx.fillStyle = character === 'dere' ? '#440044' : '#004444';
+        this.ctx.fillStyle = character === 'dere' ? '#0A0965' : character === 'aliza' ? '#7A0363' : character === 'shinshi' ? '#004444' : '#000000';
         this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.lineWidth = 2;
         
@@ -477,7 +477,6 @@ class GameRenderer {
         this.ctx.roundRect(x, y, width, height, 10);
         this.ctx.fill();
         this.ctx.stroke();
-        
         // Draw character image
         const sprite = this.sprites[`${character}_select`];
         if (sprite && sprite.complete) {
@@ -1177,11 +1176,11 @@ class GameRenderer {
         } else if (character === 'aliza') {
             // Aliza: Show health segments like Dere, but with 4 segments
             this.ctx.fillStyle = "#33ff66";
-            this.ctx.fillText(`Health: `, x, y);
+            this.ctx.fillText(`Health: `, x + 60, y);
             this.ctx.shadowBlur = 0; // Turn off shadow for bars
             
-            // Draw health layers with chrome appearance - 4 segments for Aliza
-            for (let i = 0; i < 4; i++) {
+            // Draw health layers with chrome appearance - 1 segment for Aliza
+            for (let i = 0; i < 1; i++) {
                 // Create chrome-style background for segment
                 const segmentX = x + 80 + (i * 30);
                 const segmentY = y - 15;
